@@ -1,0 +1,99 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models.user import User
+from app.schemas.user import UserCreate, UserLogin, TokenResponse, UserResponse, TokenRefreshRequest
+from app.services.auth_service import (
+    hash_password,
+    verify_password,
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+)
+
+router = APIRouter()
+
+
+@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+    """Register a new customer account."""
+    # Check if email already exists
+    existing_user = db.query(User).filter(User.email == user_data.email).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email sudah terdaftar",
+        )
+
+    # Create user
+    new_user = User(
+        email=user_data.email,
+        full_name=user_data.full_name,
+        password_hash=hash_password(user_data.password),
+        role="customer",
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    # Generate tokens
+    token_data = {"sub": new_user.id}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse.model_validate(new_user),
+    )
+
+
+@router.post("/login", response_model=TokenResponse)
+async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+    """Authenticate user and return JWT tokens."""
+    user = db.query(User).filter(User.email == credentials.email).first()
+    if not user or not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Email atau password salah",
+        )
+
+    token_data = {"sub": user.id}
+    access_token = create_access_token(token_data)
+    refresh_token = create_refresh_token(token_data)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        user=UserResponse.model_validate(user),
+    )
+
+
+@router.post("/refresh", response_model=TokenResponse)
+async def refresh(request: TokenRefreshRequest, db: Session = Depends(get_db)):
+    """Refresh access token using a valid refresh token."""
+    payload = decode_token(request.refresh_token)
+    if payload is None or payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token tidak valid",
+        )
+
+    user_id = payload.get("sub")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User tidak ditemukan",
+        )
+
+    token_data = {"sub": user.id}
+    access_token = create_access_token(token_data)
+    new_refresh_token = create_refresh_token(token_data)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=new_refresh_token,
+        user=UserResponse.model_validate(user),
+    )
