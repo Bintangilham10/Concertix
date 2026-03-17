@@ -1,14 +1,14 @@
-# 🎵 Concertix — Website Pembelian Tiket Konser
+# Concertix — Website Pembelian Tiket Konser
 
 Platform digital untuk pembelian tiket konser secara online. Sistem mencakup autentikasi pengguna (JWT), pemesanan tiket, pembayaran via Midtrans, penerbitan tiket digital QR code, dan rancangan validasi integritas tiket menggunakan blockchain (planned).
 
 **Tim:** Bintangilham10 · Juanda Sitorus
-**Institusi:** FTE, Telkom University 
+**Institusi:** FTE, Telkom University
 **Metodologi:** DevSecOps
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Layer        | Teknologi                                    |
 | ------------ | -------------------------------------------- |
@@ -22,7 +22,7 @@ Platform digital untuk pembelian tiket konser secara online. Sistem mencakup aut
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Concertix/
@@ -35,7 +35,7 @@ Concertix/
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -87,9 +87,9 @@ Concertix/
 
 ---
 
-## 👥 Roles
+## Roles
 
-| Role         | Kemampuan                                                            |
+| Role         | Fitur                                                            |
 | ------------ | -------------------------------------------------------------------- |
 | **Customer** | Registrasi, login, lihat konser, pesan tiket, bayar, terima QR tiket |
 | **Admin**    | Kelola data konser, monitoring transaksi, lihat laporan              |
