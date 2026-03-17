@@ -2,23 +2,23 @@
 
 Platform digital untuk pembelian tiket konser secara online. Sistem mencakup autentikasi pengguna (JWT), pemesanan tiket, pembayaran via Midtrans, penerbitan tiket digital QR code, dan rancangan validasi integritas tiket menggunakan blockchain (planned).
 
-**Tim:** Bintang Ilham Pratama (101032300016) · Juanda Sitorus (101032300055)  
-**Institusi:** S1 Teknik Komputer, Fakultas Teknik Elektro, Telkom University  
+**Tim:** Bintangilham10 · Juanda Sitorus
+**Institusi:** FTE, Telkom University 
 **Metodologi:** DevSecOps
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Layer | Teknologi |
-|-------|-----------|
+| Layer        | Teknologi                                    |
+| ------------ | -------------------------------------------- |
 | **Frontend** | Next.js, TypeScript, Tailwind CSS, shadcn/ui |
-| **Backend** | FastAPI, Pydantic, SQLAlchemy |
-| **Database** | PostgreSQL |
-| **Auth** | JWT (access + refresh token) |
-| **Payment** | Midtrans |
-| **CI/CD** | GitHub → Jenkins → Docker |
-| **Security** | OWASP ZAP, SonarQube, Dependency-Check |
+| **Backend**  | FastAPI, Pydantic, SQLAlchemy                |
+| **Database** | PostgreSQL                                   |
+| **Auth**     | JWT (access + refresh token)                 |
+| **Payment**  | Midtrans                                     |
+| **CI/CD**    | GitHub → Jenkins → Docker                    |
+| **Security** | OWASP ZAP, SonarQube, Dependency-Check       |
 
 ---
 
@@ -47,17 +47,20 @@ Concertix/
 ### Setup
 
 1. **Clone repository**
+
    ```bash
    git clone https://github.com/<your-username>/Concertix.git
    cd Concertix
    ```
 
 2. **Copy environment variables**
+
    ```bash
    cp .env.example .env
    ```
 
 3. **Run with Docker Compose**
+
    ```bash
    docker-compose up --build
    ```
@@ -65,6 +68,7 @@ Concertix/
 4. **Or run manually:**
 
    **Frontend:**
+
    ```bash
    cd frontend
    npm install
@@ -72,6 +76,7 @@ Concertix/
    ```
 
    **Backend:**
+
    ```bash
    cd backend
    python -m venv .venv
@@ -84,10 +89,10 @@ Concertix/
 
 ## 👥 Roles
 
-| Role | Kemampuan |
-|------|-----------|
+| Role         | Kemampuan                                                            |
+| ------------ | -------------------------------------------------------------------- |
 | **Customer** | Registrasi, login, lihat konser, pesan tiket, bayar, terima QR tiket |
-| **Admin** | Kelola data konser, monitoring transaksi, lihat laporan |
+| **Admin**    | Kelola data konser, monitoring transaksi, lihat laporan              |
 
 ---
 
