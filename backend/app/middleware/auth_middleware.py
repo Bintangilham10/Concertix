@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.services.auth_service import decode_token
+from app.services.token_blacklist import is_token_blacklisted
 
 security = HTTPBearer()
 
@@ -16,8 +17,19 @@ async def get_current_user(
     """
     Dependency that extracts and validates the JWT token,
     then returns the current authenticated user.
+
+    T1 Mitigation: Also checks if the token has been blacklisted (logout).
     """
     token = credentials.credentials
+
+    # T1: Check if token is blacklisted (user has logged out)
+    if is_token_blacklisted(token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token telah di-revoke (logout). Silakan login ulang.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     payload = decode_token(token)
 
     if payload is None:

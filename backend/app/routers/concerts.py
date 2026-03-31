@@ -6,7 +6,7 @@ from app.database import get_db
 from app.models.concert import Concert
 from app.models.user import User
 from app.schemas.concert import ConcertCreate, ConcertUpdate, ConcertResponse
-from app.middleware.auth_middleware import get_current_user, require_admin
+from app.middleware.rbac import require_role  # T10: Use generic RBAC middleware
 
 router = APIRouter()
 
@@ -38,7 +38,7 @@ async def get_concert(concert_id: str, db: Session = Depends(get_db)):
 @router.post("/", response_model=ConcertResponse, status_code=status.HTTP_201_CREATED)
 async def create_concert(
     concert_data: ConcertCreate,
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
 ):
     """Create a new concert (admin only)."""
@@ -56,7 +56,7 @@ async def create_concert(
 async def update_concert(
     concert_id: str,
     concert_data: ConcertUpdate,
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
 ):
     """Update a concert (admin only)."""
@@ -79,7 +79,7 @@ async def update_concert(
 @router.delete("/{concert_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_concert(
     concert_id: str,
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
 ):
     """Delete a concert (admin only)."""
