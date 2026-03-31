@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, TokenResponse, UserResponse, TokenRefreshRequest
+from app.middleware.rate_limiter import limiter
+from app.middleware.auth_middleware import get_current_user
 from app.services.auth_service import (
     hash_password,
     verify_password,
@@ -11,8 +14,10 @@ from app.services.auth_service import (
     create_refresh_token,
     decode_token,
 )
+from app.services.token_blacklist import blacklist_token
 
 router = APIRouter()
+security = HTTPBearer()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -50,7 +55,8 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")  # T4 Mitigation: Rate limiting to prevent brute-force
+async def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT tokens."""
     user = db.query(User).filter(User.email == credentials.email).first()
     if not user or not verify_password(credentials.password, user.password_hash):
@@ -68,6 +74,26 @@ async def login(credentials: UserLogin, db: Session = Depends(get_db)):
         refresh_token=refresh_token,
         user=UserResponse.model_validate(user),
     )
+
+
+@router.post("/logout")
+async def logout(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Logout the current user by blacklisting their JWT token.
+
+    T1 Mitigation: Token is added to Redis blacklist so it cannot be
+    reused even if it hasn't expired yet.
+    """
+    token = credentials.credentials
+    success = blacklist_token(token, ttl_seconds=1800)  # 30 min = JWT expiry
+
+    return {
+        "message": "Logout berhasil",
+        "token_revoked": success,
+    }
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -97,3 +123,4 @@ async def refresh(request: TokenRefreshRequest, db: Session = Depends(get_db)):
         refresh_token=new_refresh_token,
         user=UserResponse.model_validate(user),
     )
+
