@@ -11,3 +11,16 @@ alembic==1.13.1
 qrcode[pil]==7.4.2
 httpx==0.27.0
 python-dotenv==1.0.1
+
+# ── DevSecOps Additions ─────────────────────
+# T4: Rate limiting
+slowapi==0.1.9
+
+# Week 2: Prometheus metrics
+prometheus-fastapi-instrumentator==7.0.0
+
+# Week 2: Redis (for token blacklist / caching)
+redis==5.0.7
+
+# Week 3: Blockchain hashing
+# (uses stdlib hashlib — no extra dep needed)
