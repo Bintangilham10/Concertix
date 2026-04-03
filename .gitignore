@@ -45,3 +45,19 @@ npm-debug.log*
 # Misc
 *.bak
 *.tmp
+
+# ── DevSecOps (T11 Mitigation) ──────────────────────
+# Security scan reports
+reports/
+zap_report.*
+dependency-check-report.*
+.scannerwork/
+
+# Monitoring data (Docker volumes)
+monitoring/grafana/data/
+monitoring/prometheus/data/
+
+# Secrets (NEVER commit)
+*.pem
+*.key
+*.crt
