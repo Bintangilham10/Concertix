@@ -9,6 +9,13 @@ from app.schemas.transaction import PaymentCreateRequest, PaymentWebhookPayload,
 from app.middleware.auth_middleware import get_current_user
 from app.services.payment_service import create_snap_transaction, verify_webhook_signature
 
+# Blockchain integration (Week 3)
+try:
+    from app.services.blockchain_service import add_ticket_block
+    BLOCKCHAIN_ENABLED = True
+except ImportError:
+    BLOCKCHAIN_ENABLED = False
+
 router = APIRouter()
 
 
@@ -76,13 +83,25 @@ async def payment_webhook(
 
     Midtrans sends POST to this endpoint when payment status changes.
     """
-    # Verify signature (when Midtrans keys are configured)
-    # if payload.signature_key:
-    #     is_valid = verify_webhook_signature(
-    #         payload.order_id, "200", payload.gross_amount or "0", payload.signature_key
-    #     )
-    #     if not is_valid:
-    #         raise HTTPException(status_code=403, detail="Invalid signature")
+    # T3 Mitigation: Verify Midtrans webhook signature (HMAC-SHA512)
+    # In production (MIDTRANS_SERVER_KEY set), signature is REQUIRED.
+    # In dev mode (no server key), unsigned webhooks are allowed for testing.
+    from app.config import get_settings
+    _settings = get_settings()
+    has_server_key = bool(_settings.MIDTRANS_SERVER_KEY)
+
+    if payload.signature_key:
+        is_valid = verify_webhook_signature(
+            payload.order_id, "200", payload.gross_amount or "0", payload.signature_key
+        )
+        if not is_valid:
+            raise HTTPException(status_code=403, detail="Invalid webhook signature")
+    elif has_server_key:
+        # Server key configured but no signature provided → reject
+        raise HTTPException(
+            status_code=403,
+            detail="Webhook signature required but not provided"
+        )
 
     # Find transaction
     transaction = db.query(Transaction).filter(Transaction.id == payload.order_id).first()
@@ -112,7 +131,24 @@ async def payment_webhook(
     if new_status == "success":
         ticket = transaction.ticket
         ticket.status = "paid"
-        # TODO: Generate QR code for the ticket
+
+        # T12 Mitigation: Record ticket issuance on blockchain
+        if BLOCKCHAIN_ENABLED:
+            try:
+                add_ticket_block(
+                    db=db,
+                    ticket_id=str(ticket.id),
+                    user_id=str(ticket.user_id),
+                    concert_id=str(ticket.concert_id),
+                    action="ISSUED",
+                )
+            except Exception as e:
+                # Don't fail payment if blockchain recording fails,
+                # but log so it's visible in monitoring/Grafana
+                import logging
+                logging.getLogger(__name__).error(
+                    f"Blockchain recording failed for ticket {ticket.id}: {e}"
+                )
 
     db.commit()
 
