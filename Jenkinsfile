@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         DOCKER_COMPOSE = 'docker-compose'
+        SONAR_HOST_URL = 'http://sonarqube:9000'
+        ZAP_TARGET = 'http://backend:8000'
     }
 
     stages {
@@ -37,14 +39,19 @@ pipeline {
                 stage('Test Frontend') {
                     steps {
                         dir('frontend') {
-                            sh 'npm run test || echo "No tests configured yet"'
+                            sh 'npm run test -- --coverage || echo "No tests configured yet"'
                         }
                     }
                 }
                 stage('Test Backend') {
                     steps {
                         dir('backend') {
-                            sh 'pytest || echo "No tests configured yet"'
+                            sh 'pytest --junitxml=reports/pytest-results.xml --cov=app --cov-report=xml:reports/coverage.xml || echo "No tests configured yet"'
+                        }
+                    }
+                    post {
+                        always {
+                            junit allowEmptyResults: true, testResults: 'backend/reports/pytest-results.xml'
                         }
                     }
                 }
@@ -53,33 +60,94 @@ pipeline {
 
         stage('Security Scan') {
             parallel {
-                stage('SonarQube') {
+                stage('SonarQube SAST') {
                     steps {
-                        echo 'TODO: Configure SonarQube scanner'
+                        script {
+                            def scannerHome = tool 'SonarQubeScanner'
+                            withSonarQubeEnv('SonarQube') {
+                                sh """
+                                    ${scannerHome}/bin/sonar-scanner \
+                                        -Dsonar.projectKey=concertix \
+                                        -Dsonar.sources=backend/app,frontend/src \
+                                        -Dsonar.python.version=3.11 \
+                                        -Dsonar.python.coverage.reportPaths=backend/reports/coverage.xml \
+                                        -Dsonar.javascript.lcov.reportPaths=frontend/coverage/lcov.info \
+                                        -Dsonar.exclusions=**/node_modules/**,**/.next/**,**/venv/**
+                                """
+                            }
+                        }
                     }
                 }
+
                 stage('OWASP Dependency-Check') {
                     steps {
-                        echo 'TODO: Configure OWASP Dependency-Check'
+                        dependencyCheck additionalArguments: '''
+                            --scan backend/requirements.txt
+                            --scan frontend/package-lock.json
+                            --format HTML
+                            --format JSON
+                            --out reports/dependency-check
+                        ''', odcInstallation: 'OWASP-Dependency-Check'
+                    }
+                    post {
+                        always {
+                            dependencyCheckPublisher pattern: 'reports/dependency-check/dependency-check-report.json',
+                                failedTotalCritical: 1,
+                                failedTotalHigh: 5
+                        }
                     }
                 }
-                stage('OWASP ZAP') {
+
+                stage('OWASP ZAP DAST') {
                     steps {
-                        echo 'TODO: Configure OWASP ZAP scan'
+                        sh """
+                            docker run --rm --network=host \
+                                -v \$(pwd)/reports:/zap/wrk/:rw \
+                                ghcr.io/zaproxy/zaproxy:stable \
+                                zap-api-scan.py \
+                                -t ${ZAP_TARGET}/openapi.json \
+                                -f openapi \
+                                -r zap_report.html \
+                                -J zap_report.json \
+                                -l WARN
+                        """
                     }
+                    post {
+                        always {
+                            publishHTML(target: [
+                                reportDir: 'reports',
+                                reportFiles: 'zap_report.html',
+                                reportName: 'OWASP ZAP Report',
+                                keepAll: true
+                            ])
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('SonarQube Quality Gate') {
+            steps {
+                timeout(time: 5, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh "${DOCKER_COMPOSE} build"
+                sh "${DOCKER_COMPOSE} build --no-cache"
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'TODO: Configure deployment target'
+                sh "${DOCKER_COMPOSE} down || true"
+                sh "${DOCKER_COMPOSE} up -d"
+                // Wait for services to be healthy
+                sh "sleep 15"
+                sh "curl -f http://localhost:8000/ || exit 1"
+                echo 'Deployment successful!'
             }
         }
     }
@@ -87,9 +155,16 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
+            // Archive all reports
+            archiveArtifacts artifacts: 'reports/**', allowEmptyArchive: true
+        }
+        success {
+            echo 'Pipeline succeeded!'
         }
         failure {
-            echo 'Pipeline failed!'
+            echo 'Pipeline failed! Check reports for details.'
+            // TODO: Configure Slack/Email notification
+            // slackSend channel: '#concertix-ci', message: "❌ Build FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
         }
     }
 }
