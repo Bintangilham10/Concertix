@@ -10,8 +10,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-concertix}
       POSTGRES_USER: ${POSTGRES_USER:-concertix_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-concertix_pass}
-    ports:
-      - "5432:5432"
+    # T5 Mitigation: Port NOT exposed to host — internal Docker network only
+    # ports:
+    #   - "5432:5432"  # REMOVED for security
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -19,6 +20,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - concertix-net
+
+  # ── Redis (Token Blacklist / Caching) ──
+  redis:
+    image: redis:7-alpine
+    container_name: concertix-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - concertix-net
 
   # ── FastAPI Backend ──
   backend:
@@ -29,13 +48,20 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-concertix_user}:${POSTGRES_PASSWORD:-concertix_pass}@db:5432/${POSTGRES_DB:-concertix}
+      REDIS_URL: redis://redis:6379/0
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - ./backend:/app
+    networks:
+      - concertix-net
 
   # ── Next.js Frontend ──
   frontend:
@@ -50,6 +76,99 @@ services:
       - "3000:3000"
     depends_on:
       - backend
+    networks:
+      - concertix-net
+
+  # ══════════════════════════════════════════════════════════════
+  # ── Monitoring Stack (Week 2) ──
+  # ══════════════════════════════════════════════════════════════
+
+  # ── Prometheus ──
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    container_name: concertix-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+    depends_on:
+      - backend
+    networks:
+      - concertix-net
+
+  # ── Grafana ──
+  grafana:
+    image: grafana/grafana:10.4.0
+    container_name: concertix-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-concertix_grafana}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - concertix-net
+
+  # ── cAdvisor (Container Metrics) ──
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: concertix-cadvisor
+    restart: unless-stopped
+    privileged: true
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    ports:
+      - "8080:8080"
+    networks:
+      - concertix-net
+
+  # ══════════════════════════════════════════════════════════════
+  # ── Security Scanning (CI only, optional for local) ──
+  # ══════════════════════════════════════════════════════════════
+
+  # ── SonarQube (SAST) ──
+  sonarqube:
+    image: sonarqube:10.4-community
+    container_name: concertix-sonarqube
+    restart: unless-stopped
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+    ports:
+      - "9000:9000"
+    profiles:
+      - security  # Only start with: docker-compose --profile security up
+    networks:
+      - concertix-net
 
 volumes:
   postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
+
+networks:
+  concertix-net:
+    driver: bridge
