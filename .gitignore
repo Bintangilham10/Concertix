@@ -61,3 +61,7 @@ monitoring/prometheus/data/
 *.pem
 *.key
 *.crt
+
+# Internal Planning Files
+task consertix
+implementation_plan konsertiket
