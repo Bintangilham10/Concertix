@@ -1,0 +1,29 @@
+# DevSecOps Concertix — Task Tracker
+
+## Minggu 1: Threat Modeling & Mitigations
+
+- [x] Fix T3: Aktifkan webhook signature verification
+- [x] Fix T5: Hapus port expose PostgreSQL
+- [x] Fix T10: Buat RBAC middleware
+- [x] Fix T1: JWT improvements (shorter expiry)
+- [x] Fix T4: Rate limiting (slowapi)
+- [x] Fix T7: CORS production config
+
+## Minggu 2: CI/CD, SAST, DAST, Monitoring
+
+- [x] Lengkapi Jenkinsfile (SonarQube, Dependency-Check, ZAP)
+- [x] Buat sonar-project.properties
+- [x] Tambah Prometheus + Grafana + cAdvisor ke docker-compose
+- [x] Buat monitoring/prometheus.yml
+- [x] Buat monitoring/grafana dashboards
+- [x] Tambah prometheus-fastapi-instrumentator ke backend
+- [x] Buat locustfile.py (traffic generation)
+- [x] Dokumentasi pentest plan
+
+## Minggu 3: Blockchain Ticketing
+
+- [ ] Buat model Block di database
+- [ ] Buat blockchain_service.py
+- [ ] Buat router blockchain.py
+- [ ] Hook blockchain ke ticket purchase flow
+- [ ] Register router di main.py
