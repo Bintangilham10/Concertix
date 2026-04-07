@@ -532,6 +532,15 @@ nav {
   font-weight: 500;
 }
 
+/* Action row for capacity and CTA */
+.hero-actions {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
 /* Capacity breakdown */
 .cap-card {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -915,6 +924,8 @@ nav {
   cursor: pointer;
   transition: all .3s cubic-bezier(.34, 1.56, .64, 1);
   border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 .ticket-card:hover {
