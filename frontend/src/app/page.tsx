@@ -693,12 +693,19 @@ export default function Home() {
         <section id="venue" className="venue-section" aria-labelledby="venue-title">
           <div className="venue-inner">
             <div className="venue-map" role="img" aria-label="Peta lokasi Lapangan Gasibu, Bandung">
-              <div className="map-grid" aria-hidden="true"></div>
-              <div className="map-pin-wrap">
-                <span className="map-pin" aria-hidden="true">📍</span>
-                <p className="map-label">Lapangan Gasibu, Bandung</p>
-                <p className="map-coords">6.9019° S, 107.6183° E</p>
-              </div>
+              <iframe
+                src="https://maps.google.com/maps?q=-6.9019,107.6183&z=16&output=embed"
+                width="100%"
+                height="100%"
+                style={{
+                  border: 0,
+                  filter: "invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)"
+                }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Peta Lapangan Gasibu"
+              ></iframe>
             </div>
             <div className="venue-info">
               <div className="section-label">Lokasi Event</div>
@@ -709,44 +716,54 @@ export default function Home() {
               </h2>
               <ul className="venue-list" role="list" aria-label="Informasi venue">
                 <li className="venue-item" role="listitem">
-                  <div className="venue-icon" aria-hidden="true">📍</div>
+                  <div className="venue-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                  </div>
                   <div>
-                    <strong>Alamat Lengkap</strong>
+                    <strong>Info Lokasi</strong>
                     <span>Lapangan Gasibu, Kota Bandung, Jawa Barat</span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
-                  <div className="venue-icon" aria-hidden="true">🎫</div>
+                  <div className="venue-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M21.5 12H21a2 2 0 0 0 0-4h.5V5a2 2 0 0 0-2-2H4.5a2 2 0 0 0-2 2v3h.5a2 2 0 0 0 0 4h-.5v3a2 2 0 0 0 2 2H20a2 2 0 0 0 2-2v-3z" /><path d="M8 8V8.01" /><path d="M8 12V12.01" /><path d="M8 16V16.01" /></svg>
+                  </div>
                   <div>
-                    <strong>Kapasitas Event</strong>
-                    <span>4.000 penonton (1.000 VIP + 3.000 Regular)</span>
+                    <strong>Kapasitas Terbatas</strong>
+                    <span>4.000 Tiket Resmi (Termasuk Akses VIP &amp; Festival)</span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
-                  <div className="venue-icon" aria-hidden="true">🚗</div>
+                  <div className="venue-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /><path d="M14 17h1" /></svg>
+                  </div>
                   <div>
-                    <strong>Parkir</strong>
-                    <span>Area parkir luas di sekitar Lapangan Gasibu</span>
+                    <strong>Fasilitas Parkir</strong>
+                    <span>Tersedia area parkir terpadu yang aman &amp; memadai</span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
-                  <div className="venue-icon" aria-hidden="true">🚍</div>
+                  <div className="venue-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8H8m4-4v0M4 10h16M4 6h16M6 6v4m12-4v4" /></svg>
+                  </div>
                   <div>
-                    <strong>Transportasi Umum</strong>
-                    <span>Trans Metro Bandung Koridor 2 &amp; 3 — Halte Gasibu</span>
+                    <strong>Akses Transportasi</strong>
+                    <span>Sangat terjangkau via halte Trans Metro Bandung</span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
-                  <div className="venue-icon" aria-hidden="true">🍜</div>
+                  <div className="venue-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></svg>
+                  </div>
                   <div>
-                    <strong>Food Court</strong>
-                    <span>Tersedia berbagai pilihan makanan &amp; minuman</span>
+                    <strong>F&amp;B Area</strong>
+                    <span>Dilengkapi area kuliner dengan beragam pilihan</span>
                   </div>
                 </li>
               </ul>
               <button
                 className="btn-primary"
-                style={{ padding: "13px 28px", fontSize: "14px", borderRadius: "10px", fontWeight: 800 }}
+                style={{ padding: "16px 36px", fontSize: "15px", borderRadius: "12px", fontWeight: 800, letterSpacing: "0.5px", boxShadow: "0 8px 24px rgba(123,44,191,0.3)" }}
                 onClick={() => openModal("Regular", "Rp 750.000", 750000)}
                 aria-label="Amankan tiket sekarang"
               >
