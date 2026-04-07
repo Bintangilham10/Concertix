@@ -428,37 +428,38 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="cap-card" role="group" aria-label="Rincian kapasitas tiket">
-              <div className="cap-label">Total Tiket Tersedia</div>
-              <div className="cap-number" aria-label="4.000 penonton">
-                4.000 Penonton
-              </div>
-              <div className="cap-breakdown">
-                <div className="cap-item">
-                  <span className="cap-dot vip" aria-hidden="true"></span>
-                  <span className="cap-item-label">VIP</span>
-                  <span className="cap-item-val">1.000 tiket</span>
+            <div className="hero-actions">
+              <div className="cap-card" role="group" aria-label="Rincian kapasitas tiket">
+                <div className="cap-label">Total Tiket Tersedia</div>
+                <div className="cap-number" aria-label="4.000 penonton">
+                  4.000 Penonton
                 </div>
-                <div className="cap-sep" aria-hidden="true"></div>
-                <div className="cap-item">
-                  <span className="cap-dot reg" aria-hidden="true"></span>
-                  <span className="cap-item-label">Regular</span>
-                  <span className="cap-item-val">3.000 tiket</span>
+                <div className="cap-breakdown">
+                  <div className="cap-item">
+                    <span className="cap-dot vip" aria-hidden="true"></span>
+                    <span className="cap-item-label">VIP</span>
+                    <span className="cap-item-val">1.000 tiket</span>
+                  </div>
+                  <div className="cap-sep" aria-hidden="true"></div>
+                  <div className="cap-item">
+                    <span className="cap-dot reg" aria-hidden="true"></span>
+                    <span className="cap-item-label">Regular</span>
+                    <span className="cap-item-val">3.000 tiket</span>
+                  </div>
                 </div>
               </div>
+
+              <button
+                className="hero-cta"
+                onClick={() => openModal("VIP", "Rp 1.250.000", 1250000)}
+                aria-label="Beli tiket konser sekarang"
+              >
+                Beli Tiket Sekarang
+                <span className="cta-arrow" aria-hidden="true">→</span>
+              </button>
             </div>
 
-            <button
-              className="hero-cta"
-              onClick={() => openModal("VIP", "Rp 1.250.000", 1250000)}
-              aria-label="Beli tiket konser sekarang"
-            >
-              Beli Tiket Sekarang
-              <span className="cta-arrow" aria-hidden="true">→</span>
-            </button>
-
             <div className="trust-row" role="list" aria-label="Badge kepercayaan">
-              <div className="trust-badge" role="listitem">🔒 SSL Secured</div>
               <div className="trust-badge" role="listitem">✅ Tiket Resmi</div>
               <div className="trust-badge" role="listitem">📱 QR Code Entry</div>
               <div className="trust-badge" role="listitem">💳 Powered by Midtrans</div>
@@ -815,21 +816,12 @@ export default function Home() {
           Tiket hanya dijual melalui platform resmi ini.
         </p>
         <div className="payment-badges" role="list" aria-label="Metode pembayaran yang diterima">
-          <div className="pay-badge" role="listitem">🔒 SSL</div>
-          <div className="pay-badge" role="listitem">MIDTRANS</div>
-          <div className="pay-badge" role="listitem">VISA</div>
-          <div className="pay-badge" role="listitem">MASTERCARD</div>
-          <div className="pay-badge" role="listitem">GoPay</div>
-          <div className="pay-badge" role="listitem">OVO</div>
-          <div className="pay-badge" role="listitem">Dana</div>
+          <div className="pay-badge" role="listitem">QRIS</div>
         </div>
         <nav className="footer-links" aria-label="Tautan footer">
           <a href="#">Syarat &amp; Ketentuan</a>
           <a href="#">Kebijakan Privasi</a>
           <a href="#">Hubungi Kami</a>
-          <a href="#" aria-label="Instagram resmi">Instagram</a>
-          <a href="#" aria-label="TikTok resmi">TikTok</a>
-          <a href="#" aria-label="Twitter/X resmi">Twitter</a>
         </nav>
         <p className="footer-copy">© 2026 Konser Bandung Raya. All rights reserved.</p>
       </footer>
