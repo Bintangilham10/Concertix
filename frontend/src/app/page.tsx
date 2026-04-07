@@ -403,23 +403,7 @@ export default function Home() {
               <strong>17 Agustus 2026, Senin, 19:00 WIB</strong>
             </p>
 
-            <div className="info-cards" role="list" aria-label="Informasi event">
-              <div className="info-card" role="listitem">
-                <span className="info-card-icon" aria-hidden="true">📅</span>
-                <div>
-                </div>
-              </div>
-              <div className="info-card" role="listitem">
-                <span className="info-card-icon" aria-hidden="true">🕖</span>
-                <div>
-                </div>
-              </div>
-              <div className="info-card" role="listitem">
-                <span className="info-card-icon" aria-hidden="true">🎫</span>
-                <div>
-                </div>
-              </div>
-            </div>
+
 
             <div className="hero-actions">
               <div className="cap-card" role="group" aria-label="Rincian kapasitas tiket">
