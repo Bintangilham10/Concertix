@@ -407,23 +407,16 @@ export default function Home() {
               <div className="info-card" role="listitem">
                 <span className="info-card-icon" aria-hidden="true">📅</span>
                 <div>
-                  <div className="info-card-label">Tanggal</div>
-                  <div className="info-card-value">17 Agustus 2026</div>
                 </div>
               </div>
               <div className="info-card" role="listitem">
                 <span className="info-card-icon" aria-hidden="true">🕖</span>
                 <div>
-                  <div className="info-card-label">Waktu</div>
-                  <div className="info-card-value">19:00 WIB</div>
                 </div>
               </div>
               <div className="info-card" role="listitem">
                 <span className="info-card-icon" aria-hidden="true">🎫</span>
                 <div>
-                  <div className="info-card-label">Kapasitas</div>
-                  <div className="info-card-value">4.000 Penonton</div>
-                  <div className="info-card-sub">3.000 Regular + 1.000 VIP</div>
                 </div>
               </div>
             </div>
