@@ -692,12 +692,19 @@ export default function Home() {
         <section id="venue" className="venue-section" aria-labelledby="venue-title">
           <div className="venue-inner">
             <div className="venue-map" role="img" aria-label="Peta lokasi Lapangan Gasibu, Bandung">
-              <div className="map-grid" aria-hidden="true"></div>
-              <div className="map-pin-wrap">
-                <span className="map-pin" aria-hidden="true">📍</span>
-                <p className="map-label">Lapangan Gasibu, Bandung</p>
-                <p className="map-coords">6.9019° S, 107.6183° E</p>
-              </div>
+              <iframe
+                src="https://maps.google.com/maps?q=-6.9019,107.6183&z=16&output=embed"
+                width="100%"
+                height="100%"
+                style={{
+                  border: 0,
+                  filter: "invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)"
+                }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                title="Peta Lapangan Gasibu"
+              ></iframe>
             </div>
             <div className="venue-info">
               <div className="section-label">Lokasi Event</div>
@@ -745,7 +752,7 @@ export default function Home() {
               </ul>
               <button
                 className="btn-primary"
-                style={{ padding: "13px 28px", fontSize: "14px", borderRadius: "10px", fontWeight: 800 }}
+                style={{ padding: "16px 36px", fontSize: "15px", borderRadius: "12px", fontWeight: 800, letterSpacing: "0.5px", boxShadow: "0 8px 24px rgba(123,44,191,0.3)" }}
                 onClick={() => openModal("Regular", "Rp 750.000", 750000)}
                 aria-label="Amankan tiket sekarang"
               >
