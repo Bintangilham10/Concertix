@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { loginWithSupabase, getSupabaseUser, cacheUser } from "@/lib/auth";
+import { loginWithJwt } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,16 +24,9 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // Login via Supabase Auth
-      await loginWithSupabase(email, password);
-
-      // Get user info (includes role from app_metadata)
-      const user = await getSupabaseUser();
+      const user = await loginWithJwt(email, password);
 
       if (user) {
-        cacheUser(user);
-
-        // Redirect based on role
         if (user.role === "admin") {
           router.push("/admin");
         } else {
@@ -130,8 +123,8 @@ export default function LoginPage() {
             </button>
 
             <p className="auth-note">
-              Masuk langsung menggunakan akun Google atau Apple dalam satu
-              langkah.
+              Masuk menggunakan email dan kata sandi yang terdaftar di
+              Concertix.
             </p>
           </form>
         </div>

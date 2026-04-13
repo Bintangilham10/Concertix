@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { registerWithSupabase, getSupabaseUser, cacheUser } from "@/lib/auth";
+import { registerWithJwt } from "@/lib/auth";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -31,20 +31,16 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // Register via Supabase Auth
-      await registerWithSupabase(email, password, fullName);
-
-      // Get user info
-      const user = await getSupabaseUser();
+      const user = await registerWithJwt(email, password, fullName);
 
       if (user) {
-        cacheUser(user);
-        router.push("/");
+        if (user.role === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/");
+        }
       } else {
-        // Supabase may require email confirmation
-        setError(
-          "Akun berhasil dibuat! Silakan cek email untuk verifikasi, lalu login."
-        );
+        setError("Akun berhasil dibuat, tetapi data user tidak ditemukan.");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Pendaftaran gagal.";
