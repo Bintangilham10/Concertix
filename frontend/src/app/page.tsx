@@ -11,15 +11,69 @@ interface ToastData {
 
 // ── Artist data ────────────────────────────────────────────────────
 const artists = [
-  { name: "Hindia", initials: "HN", genre: "Indie Pop", color: "ac-purple", badge: "⭐ HEADLINE" },
-  { name: "Yura Yunita", initials: "YY", genre: "Pop", color: "ac-blue", badge: "⭐ HEADLINE" },
-  { name: "Bernadya", initials: "BD", genre: "Indie", color: "ac-teal", badge: null },
-  { name: ".Feast", initials: ".F", genre: "Post-Punk", color: "ac-purple", badge: null },
-  { name: "Iwan Fals", initials: "IF", genre: "Folk", color: "ac-amber", badge: "⭐ LEGEND" },
-  { name: "Virgoun", initials: "VG", genre: "Pop", color: "ac-blue", badge: null },
-  { name: "Tulus", initials: "TL", genre: "Jazz/Pop", color: "ac-teal", badge: "⭐ HEADLINE" },
-  { name: "Dewa 19", initials: "D19", genre: "Rock", color: "ac-amber", badge: "⭐ LEGEND" },
-  { name: "Idgitaf", initials: "IG", genre: "Indie", color: "ac-purple", badge: null },
+  {
+    name: "Hindia",
+    initials: "HN",
+    genre: "Indie Pop",
+    color: "ac-purple",
+    badge: "⭐ HEADLINE",
+  },
+  {
+    name: "Yura Yunita",
+    initials: "YY",
+    genre: "Pop",
+    color: "ac-blue",
+    badge: "⭐ HEADLINE",
+  },
+  {
+    name: "Bernadya",
+    initials: "BD",
+    genre: "Indie",
+    color: "ac-teal",
+    badge: null,
+  },
+  {
+    name: ".Feast",
+    initials: ".F",
+    genre: "Post-Punk",
+    color: "ac-purple",
+    badge: null,
+  },
+  {
+    name: "Iwan Fals",
+    initials: "IF",
+    genre: "Folk",
+    color: "ac-amber",
+    badge: "⭐ LEGEND",
+  },
+  {
+    name: "Virgoun",
+    initials: "VG",
+    genre: "Pop",
+    color: "ac-blue",
+    badge: null,
+  },
+  {
+    name: "Tulus",
+    initials: "TL",
+    genre: "Jazz/Pop",
+    color: "ac-teal",
+    badge: "⭐ HEADLINE",
+  },
+  {
+    name: "Dewa 19",
+    initials: "D19",
+    genre: "Rock",
+    color: "ac-amber",
+    badge: "⭐ LEGEND",
+  },
+  {
+    name: "Idgitaf",
+    initials: "IG",
+    genre: "Indie",
+    color: "ac-purple",
+    badge: null,
+  },
 ];
 
 // ── FAQ data ───────────────────────────────────────────────────────
@@ -113,9 +167,12 @@ export default function Home() {
       setToastData({ icon, title, msg });
       setToastVisible(true);
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-      toastTimerRef.current = setTimeout(() => setToastVisible(false), duration);
+      toastTimerRef.current = setTimeout(
+        () => setToastVisible(false),
+        duration,
+      );
     },
-    []
+    [],
   );
 
   // ── Drawer ─────────────────────────────────────────────────────
@@ -141,7 +198,7 @@ export default function Home() {
       setModalOpen(true);
       setTimeout(() => nameInputRef.current?.focus(), 100);
     },
-    []
+    [],
   );
 
   const closeModal = useCallback(() => setModalOpen(false), []);
@@ -174,7 +231,12 @@ export default function Home() {
     setPhoneError(!pOk);
 
     if (!nOk || !eOk || !pOk) {
-      showToast("⚠️", "Periksa Form", "Ada data yang belum diisi dengan benar.", 3000);
+      showToast(
+        "⚠️",
+        "Periksa Form",
+        "Ada data yang belum diisi dengan benar.",
+        3000,
+      );
       return;
     }
 
@@ -183,12 +245,14 @@ export default function Home() {
 
     setTimeout(() => {
       setCheckoutText("✓ Dialihkan ke Midtrans...");
-      setCheckoutStyle({ background: "linear-gradient(135deg, #10B981, #059669)" });
+      setCheckoutStyle({
+        background: "linear-gradient(135deg, #10B981, #059669)",
+      });
       showToast(
         "🎉",
         "Pembayaran Diproses!",
         "Kamu akan diarahkan ke halaman Midtrans.",
-        4000
+        4000,
       );
       setTimeout(() => {
         closeModal();
@@ -255,12 +319,16 @@ export default function Home() {
           </ul>
 
           <div className="nav-actions">
-            <button className="btn-ghost" aria-label="Masuk ke akun">
+            <a href="/login" className="btn-ghost" aria-label="Masuk ke akun">
               Masuk
-            </button>
-            <button className="btn-primary" aria-label="Daftar akun baru">
+            </a>
+            <a
+              href="/register"
+              className="btn-primary"
+              aria-label="Daftar akun baru"
+            >
               Daftar
-            </button>
+            </a>
           </div>
 
           <button
@@ -285,25 +353,49 @@ export default function Home() {
         role="dialog"
         aria-label="Menu navigasi mobile"
       >
-        <a href="#home" onClick={(e) => { scrollTo(e, "home"); closeDrawer(); }}>
+        <a
+          href="#home"
+          onClick={(e) => {
+            scrollTo(e, "home");
+            closeDrawer();
+          }}
+        >
           Home
         </a>
-        <a href="#lineup" onClick={(e) => { scrollTo(e, "lineup"); closeDrawer(); }}>
+        <a
+          href="#lineup"
+          onClick={(e) => {
+            scrollTo(e, "lineup");
+            closeDrawer();
+          }}
+        >
           Lineup
         </a>
-        <a href="#venue" onClick={(e) => { scrollTo(e, "venue"); closeDrawer(); }}>
+        <a
+          href="#venue"
+          onClick={(e) => {
+            scrollTo(e, "venue");
+            closeDrawer();
+          }}
+        >
           Venue
         </a>
-        <a href="#faq" onClick={(e) => { scrollTo(e, "faq"); closeDrawer(); }}>
+        <a
+          href="#faq"
+          onClick={(e) => {
+            scrollTo(e, "faq");
+            closeDrawer();
+          }}
+        >
           FAQ
         </a>
         <div className="nav-drawer-actions">
-          <button className="btn-ghost" onClick={closeDrawer}>
+          <a href="/login" className="btn-ghost" onClick={closeDrawer}>
             Masuk
-          </button>
-          <button className="btn-primary" onClick={closeDrawer}>
+          </a>
+          <a href="/register" className="btn-primary" onClick={closeDrawer}>
             Daftar
-          </button>
+          </a>
         </div>
       </div>
 
@@ -365,21 +457,62 @@ export default function Home() {
                   <ellipse cx="1398" cy="220" rx="23" ry="60" />
                   <ellipse cx="1440" cy="210" rx="20" ry="52" />
                   <rect x="62" y="154" width="4" height="28" rx="2" />
-                  <rect x="57" y="162" width="4" height="18" rx="2" transform="rotate(-16 57 162)" />
+                  <rect
+                    x="57"
+                    y="162"
+                    width="4"
+                    height="18"
+                    rx="2"
+                    transform="rotate(-16 57 162)"
+                  />
                   <rect x="210" y="148" width="4" height="30" rx="2" />
-                  <rect x="205" y="156" width="4" height="20" rx="2" transform="rotate(12 205 156)" />
+                  <rect
+                    x="205"
+                    y="156"
+                    width="4"
+                    height="20"
+                    rx="2"
+                    transform="rotate(12 205 156)"
+                  />
                   <rect x="408" y="144" width="4" height="32" rx="2" />
-                  <rect x="403" y="154" width="4" height="18" rx="2" transform="rotate(-20 403 154)" />
+                  <rect
+                    x="403"
+                    y="154"
+                    width="4"
+                    height="18"
+                    rx="2"
+                    transform="rotate(-20 403 154)"
+                  />
                   <rect x="598" y="150" width="4" height="28" rx="2" />
                   <rect x="742" y="142" width="4" height="34" rx="2" />
-                  <rect x="737" y="152" width="4" height="22" rx="2" transform="rotate(-14 737 152)" />
+                  <rect
+                    x="737"
+                    y="152"
+                    width="4"
+                    height="22"
+                    rx="2"
+                    transform="rotate(-14 737 152)"
+                  />
                   <rect x="886" y="148" width="4" height="30" rx="2" />
-                  <rect x="881" y="156" width="4" height="18" rx="2" transform="rotate(8 881 156)" />
+                  <rect
+                    x="881"
+                    y="156"
+                    width="4"
+                    height="18"
+                    rx="2"
+                    transform="rotate(8 881 156)"
+                  />
                   <rect x="1074" y="144" width="4" height="32" rx="2" />
                   <rect x="1270" y="146" width="4" height="30" rx="2" />
                   <rect x="1420" y="148" width="4" height="28" rx="2" />
                 </g>
-                <rect x="0" y="0" width="1440" height="220" fill="url(#crowdGrad)" />
+                <rect
+                  x="0"
+                  y="0"
+                  width="1440"
+                  height="220"
+                  fill="url(#crowdGrad)"
+                />
               </svg>
             </div>
           </div>
@@ -403,10 +536,12 @@ export default function Home() {
               <strong>17 Agustus 2026, Senin, 19:00 WIB</strong>
             </p>
 
-
-
             <div className="hero-actions">
-              <div className="cap-card" role="group" aria-label="Rincian kapasitas tiket">
+              <div
+                className="cap-card"
+                role="group"
+                aria-label="Rincian kapasitas tiket"
+              >
                 <div className="cap-label">Total Tiket Tersedia</div>
                 <div className="cap-number" aria-label="4.000 penonton">
                   4.000 Penonton
@@ -432,20 +567,36 @@ export default function Home() {
                 aria-label="Beli tiket konser sekarang"
               >
                 Beli Tiket Sekarang
-                <span className="cta-arrow" aria-hidden="true">→</span>
+                <span className="cta-arrow" aria-hidden="true">
+                  →
+                </span>
               </button>
             </div>
 
-            <div className="trust-row" role="list" aria-label="Badge kepercayaan">
-              <div className="trust-badge" role="listitem">✅ Tiket Resmi</div>
-              <div className="trust-badge" role="listitem">📱 QR Code Entry</div>
-              <div className="trust-badge" role="listitem">💳 Powered by Midtrans</div>
+            <div
+              className="trust-row"
+              role="list"
+              aria-label="Badge kepercayaan"
+            >
+              <div className="trust-badge" role="listitem">
+                ✅ Tiket Resmi
+              </div>
+              <div className="trust-badge" role="listitem">
+                📱 QR Code Entry
+              </div>
+              <div className="trust-badge" role="listitem">
+                💳 Powered by Midtrans
+              </div>
             </div>
           </div>
         </section>
 
         {/* ══════════════ ARTIST LINEUP SECTION ══════════════ */}
-        <section id="lineup" className="lineup-section" aria-labelledby="lineup-title">
+        <section
+          id="lineup"
+          className="lineup-section"
+          aria-labelledby="lineup-title"
+        >
           <div className="section-wrapper">
             <div className="lineup-header">
               <div className="section-label">Artis Tamu</div>
@@ -455,7 +606,11 @@ export default function Home() {
               <p className="section-sub">9 Artis Luar Biasa dari Indonesia</p>
             </div>
 
-            <div className="artists-grid" role="list" aria-label="Daftar artis yang tampil">
+            <div
+              className="artists-grid"
+              role="list"
+              aria-label="Daftar artis yang tampil"
+            >
               {artists.map((artist) => (
                 <article
                   key={artist.name}
@@ -472,7 +627,9 @@ export default function Home() {
                 >
                   <div className="artist-glow" aria-hidden="true"></div>
                   <div className="artist-shine" aria-hidden="true"></div>
-                  {artist.badge && <div className="artist-badge">{artist.badge}</div>}
+                  {artist.badge && (
+                    <div className="artist-badge">{artist.badge}</div>
+                  )}
                   <div className="artist-avatar" aria-hidden="true">
                     {artist.initials}
                   </div>
@@ -485,7 +642,11 @@ export default function Home() {
         </section>
 
         {/* ══════════════ TICKET SECTION ══════════════ */}
-        <section id="tickets" className="ticket-section" aria-labelledby="ticket-title">
+        <section
+          id="tickets"
+          className="ticket-section"
+          aria-labelledby="ticket-title"
+        >
           <div className="section-wrapper">
             <div className="ticket-header">
               <div className="section-label">Pilih Tiket</div>
@@ -548,31 +709,42 @@ export default function Home() {
                       aria-valuemax={100}
                       aria-label="0% tiket VIP terjual"
                     >
-                      <div className="progress-fill" style={{ width: "0%" }}></div>
+                      <div
+                        className="progress-fill"
+                        style={{ width: "0%" }}
+                      ></div>
                     </div>
                     <div className="ticket-count" aria-live="polite">
                       1.000 tiket tersedia <span>dari 1.000</span>
                     </div>
                   </div>
-                  <ul className="benefits-list" aria-label="Keuntungan tiket VIP">
+                  <ul
+                    className="benefits-list"
+                    aria-label="Keuntungan tiket VIP"
+                  >
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Front Zone Access
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Front Zone Access
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Meet &amp; Greet
-                      dengan Artis
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Meet &amp; Greet dengan Artis
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Exclusive Merchandise
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Exclusive Merchandise
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Early Entry
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Early Entry
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>VIP Lounge Access
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      VIP Lounge Access
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Priority Parking
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Priority Parking
                     </li>
                   </ul>
                   <button
@@ -609,7 +781,9 @@ export default function Home() {
                     </span>
                   </div>
                   <div className="ticket-type">REGULAR ENTRY</div>
-                  <div className="ticket-location">Lapangan Gasibu · Zona Festival Luas</div>
+                  <div className="ticket-location">
+                    Lapangan Gasibu · Zona Festival Luas
+                  </div>
                   <div className="perf-divider" aria-hidden="true">
                     <div className="perf-notch"></div>
                     <div className="perf-line"></div>
@@ -633,24 +807,34 @@ export default function Home() {
                       aria-valuemax={100}
                       aria-label="0% tiket Regular terjual"
                     >
-                      <div className="progress-fill" style={{ width: "0%" }}></div>
+                      <div
+                        className="progress-fill"
+                        style={{ width: "0%" }}
+                      ></div>
                     </div>
                     <div className="ticket-count" aria-live="polite">
                       3.000 tiket tersedia <span>dari 3.000</span>
                     </div>
                   </div>
-                  <ul className="benefits-list" aria-label="Keuntungan tiket Regular">
+                  <ul
+                    className="benefits-list"
+                    aria-label="Keuntungan tiket Regular"
+                  >
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>General Admission
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      General Admission
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Merchandise
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Merchandise
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Free Parking
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Free Parking
                     </li>
                     <li>
-                      <span className="benefit-icon" aria-hidden="true"></span>Access to Food Court
+                      <span className="benefit-icon" aria-hidden="true"></span>
+                      Access to Food Court
                     </li>
                   </ul>
                   <button
@@ -667,16 +851,25 @@ export default function Home() {
         </section>
 
         {/* ══════════════ VENUE SECTION ══════════════ */}
-        <section id="venue" className="venue-section" aria-labelledby="venue-title">
+        <section
+          id="venue"
+          className="venue-section"
+          aria-labelledby="venue-title"
+        >
           <div className="venue-inner">
-            <div className="venue-map" role="img" aria-label="Peta lokasi Lapangan Gasibu, Bandung">
+            <div
+              className="venue-map"
+              role="img"
+              aria-label="Peta lokasi Lapangan Gasibu, Bandung"
+            >
               <iframe
                 src="https://maps.google.com/maps?q=-6.9019,107.6183&z=16&output=embed"
                 width="100%"
                 height="100%"
                 style={{
                   border: 0,
-                  filter: "invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)"
+                  filter:
+                    "invert(90%) hue-rotate(180deg) brightness(85%) contrast(110%)",
                 }}
                 allowFullScreen
                 loading="lazy"
@@ -691,10 +884,25 @@ export default function Home() {
                 <br />
                 GASIBU
               </h2>
-              <ul className="venue-list" role="list" aria-label="Informasi venue">
+              <ul
+                className="venue-list"
+                role="list"
+                aria-label="Informasi venue"
+              >
                 <li className="venue-item" role="listitem">
                   <div className="venue-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ width: 20, height: 20, color: "#FFFFFF" }}
+                    >
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
                   </div>
                   <div>
                     <strong>Info Lokasi</strong>
@@ -703,25 +911,65 @@ export default function Home() {
                 </li>
                 <li className="venue-item" role="listitem">
                   <div className="venue-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M21.5 12H21a2 2 0 0 0 0-4h.5V5a2 2 0 0 0-2-2H4.5a2 2 0 0 0-2 2v3h.5a2 2 0 0 0 0 4h-.5v3a2 2 0 0 0 2 2H20a2 2 0 0 0 2-2v-3z" /><path d="M8 8V8.01" /><path d="M8 12V12.01" /><path d="M8 16V16.01" /></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ width: 20, height: 20, color: "#FFFFFF" }}
+                    >
+                      <path d="M21.5 12H21a2 2 0 0 0 0-4h.5V5a2 2 0 0 0-2-2H4.5a2 2 0 0 0-2 2v3h.5a2 2 0 0 0 0 4h-.5v3a2 2 0 0 0 2 2H20a2 2 0 0 0 2-2v-3z" />
+                      <path d="M8 8V8.01" />
+                      <path d="M8 12V12.01" />
+                      <path d="M8 16V16.01" />
+                    </svg>
                   </div>
                   <div>
                     <strong>Kapasitas Terbatas</strong>
-                    <span>4.000 Tiket Resmi (Termasuk Akses VIP &amp; Festival)</span>
+                    <span>
+                      4.000 Tiket Resmi (Termasuk Akses VIP &amp; Festival)
+                    </span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
                   <div className="venue-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><circle cx="17" cy="17" r="2" /><path d="M14 17h1" /></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ width: 20, height: 20, color: "#FFFFFF" }}
+                    >
+                      <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+                      <circle cx="7" cy="17" r="2" />
+                      <circle cx="17" cy="17" r="2" />
+                      <path d="M14 17h1" />
+                    </svg>
                   </div>
                   <div>
                     <strong>Fasilitas Parkir</strong>
-                    <span>Tersedia area parkir terpadu yang aman &amp; memadai</span>
+                    <span>
+                      Tersedia area parkir terpadu yang aman &amp; memadai
+                    </span>
                   </div>
                 </li>
                 <li className="venue-item" role="listitem">
                   <div className="venue-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8H8m4-4v0M4 10h16M4 6h16M6 6v4m12-4v4" /></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ width: 20, height: 20, color: "#FFFFFF" }}
+                    >
+                      <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8H8m4-4v0M4 10h16M4 6h16M6 6v4m12-4v4" />
+                    </svg>
                   </div>
                   <div>
                     <strong>Akses Transportasi</strong>
@@ -730,7 +978,19 @@ export default function Home() {
                 </li>
                 <li className="venue-item" role="listitem">
                   <div className="venue-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ width: 20, height: 20, color: '#FFFFFF' }}><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /><path d="M7 2v20" /><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" /></svg>
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ width: 20, height: 20, color: "#FFFFFF" }}
+                    >
+                      <path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" />
+                      <path d="M7 2v20" />
+                      <path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />
+                    </svg>
                   </div>
                   <div>
                     <strong>F&amp;B Area</strong>
@@ -740,7 +1000,14 @@ export default function Home() {
               </ul>
               <button
                 className="btn-primary"
-                style={{ padding: "16px 36px", fontSize: "15px", borderRadius: "12px", fontWeight: 800, letterSpacing: "0.5px", boxShadow: "0 8px 24px rgba(123,44,191,0.3)" }}
+                style={{
+                  padding: "16px 36px",
+                  fontSize: "15px",
+                  borderRadius: "12px",
+                  fontWeight: 800,
+                  letterSpacing: "0.5px",
+                  boxShadow: "0 8px 24px rgba(123,44,191,0.3)",
+                }}
                 onClick={() => openModal("Regular", "Rp 750.000", 750000)}
                 aria-label="Amankan tiket sekarang"
               >
@@ -755,7 +1022,11 @@ export default function Home() {
           <div className="faq-inner">
             <div className="faq-header">
               <div className="section-label">Pertanyaan Umum</div>
-              <h2 className="section-title" id="faq-title" style={{ textAlign: "center" }}>
+              <h2
+                className="section-title"
+                id="faq-title"
+                style={{ textAlign: "center" }}
+              >
                 FAQ
               </h2>
             </div>
@@ -763,7 +1034,11 @@ export default function Home() {
             {faqs.map((faq) => {
               const isOpen = openFaqId === faq.id;
               return (
-                <div key={faq.id} className={`faq-item${isOpen ? " open" : ""}`} id={faq.id}>
+                <div
+                  key={faq.id}
+                  className={`faq-item${isOpen ? " open" : ""}`}
+                  id={faq.id}
+                >
                   <button
                     className="faq-question"
                     onClick={() => toggleFaq(faq.id)}
@@ -771,7 +1046,9 @@ export default function Home() {
                     aria-controls={`${faq.id}-answer`}
                   >
                     {faq.question}
-                    <span className="faq-chevron" aria-hidden="true">⌄</span>
+                    <span className="faq-chevron" aria-hidden="true">
+                      ⌄
+                    </span>
                   </button>
                   <div
                     className={`faq-answer${isOpen ? " open" : ""}`}
@@ -787,7 +1064,12 @@ export default function Home() {
             <div style={{ textAlign: "center", marginTop: "36px" }}>
               <button
                 className="btn-primary"
-                style={{ padding: "12px 28px", fontSize: "14px", borderRadius: "10px", fontWeight: 800 }}
+                style={{
+                  padding: "12px 28px",
+                  fontSize: "14px",
+                  borderRadius: "10px",
+                  fontWeight: 800,
+                }}
                 aria-label="Hubungi customer service"
               >
                 Butuh Bantuan? Chat CS →
@@ -809,15 +1091,23 @@ export default function Home() {
           <br />
           Tiket hanya dijual melalui platform resmi ini.
         </p>
-        <div className="payment-badges" role="list" aria-label="Metode pembayaran yang diterima">
-          <div className="pay-badge" role="listitem">QRIS</div>
+        <div
+          className="payment-badges"
+          role="list"
+          aria-label="Metode pembayaran yang diterima"
+        >
+          <div className="pay-badge" role="listitem">
+            QRIS
+          </div>
         </div>
         <nav className="footer-links" aria-label="Tautan footer">
           <a href="#">Syarat &amp; Ketentuan</a>
           <a href="#">Kebijakan Privasi</a>
           <a href="#">Hubungi Kami</a>
         </nav>
-        <p className="footer-copy">© 2026 Konser Bandung Raya. All rights reserved.</p>
+        <p className="footer-copy">
+          © 2026 Konser Bandung Raya. All rights reserved.
+        </p>
       </footer>
 
       {/* ══════════════ CHECKOUT MODAL ══════════════ */}
@@ -836,7 +1126,11 @@ export default function Home() {
             <h2 className="modal-title" id="modal-title-text">
               PESAN TIKET
             </h2>
-            <button className="modal-close" onClick={closeModal} aria-label="Tutup dialog pembelian tiket">
+            <button
+              className="modal-close"
+              onClick={closeModal}
+              aria-label="Tutup dialog pembelian tiket"
+            >
               ×
             </button>
           </div>
@@ -854,15 +1148,32 @@ export default function Home() {
                 </div>
               </div>
             </div>
-            <div className="qty-control" role="group" aria-label="Pilih jumlah tiket">
+            <div
+              className="qty-control"
+              role="group"
+              aria-label="Pilih jumlah tiket"
+            >
               <div className="qty-label">Jumlah Tiket</div>
-              <button className="qty-btn" onClick={() => changeQty(-1)} aria-label="Kurangi jumlah tiket">
+              <button
+                className="qty-btn"
+                onClick={() => changeQty(-1)}
+                aria-label="Kurangi jumlah tiket"
+              >
                 −
               </button>
-              <div className="qty-number" id="qty-display" aria-live="polite" aria-atomic="true">
+              <div
+                className="qty-number"
+                id="qty-display"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {qty}
               </div>
-              <button className="qty-btn" onClick={() => changeQty(1)} aria-label="Tambah jumlah tiket">
+              <button
+                className="qty-btn"
+                onClick={() => changeQty(1)}
+                aria-label="Tambah jumlah tiket"
+              >
                 +
               </button>
             </div>
@@ -932,7 +1243,12 @@ export default function Home() {
             </div>
             <div className="modal-total">
               <div className="modal-total-label">Total Pembayaran</div>
-              <div className="modal-total-price" id="modal-total" aria-live="polite" aria-atomic="true">
+              <div
+                className="modal-total-price"
+                id="modal-total"
+                aria-live="polite"
+                aria-atomic="true"
+              >
                 {formatRupiah(currentPrice * qty)}
               </div>
             </div>
@@ -949,7 +1265,8 @@ export default function Home() {
             <div className="secure-note" aria-label="Informasi keamanan">
               🔒{" "}
               <span>
-                Pembayaran aman melalui <strong>Midtrans</strong> · Terenkripsi SSL 256-bit
+                Pembayaran aman melalui <strong>Midtrans</strong> · Terenkripsi
+                SSL 256-bit
               </span>
             </div>
           </div>

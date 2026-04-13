@@ -1,54 +1,127 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { login } from "@/lib/api";
+
 export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!email || !password) {
+      setError("Email dan password wajib diisi.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await login(email, password);
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      router.push("/");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Login gagal.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="w-full max-w-md p-8 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
-        <h1 className="text-2xl font-bold text-white text-center mb-2">
-          Masuk ke Concertix
-        </h1>
-        <p className="text-gray-400 text-center mb-8">
-          Masukkan email dan password untuk melanjutkan
-        </p>
+    <main className="auth-shell">
+      <div className="auth-glow" />
+      <section className="auth-grid">
+        <div className="auth-panel auth-info">
+          <p className="eyebrow">KBR 2026 · Konser Bandung Raya</p>
+          <h1 className="auth-title">Selamat datang kembali di Concertix</h1>
+          <p className="auth-copy">
+            Masuk untuk akses tiket resmi, dashboard transaksi, dan verifikasi
+            blockchain. Nikmati pengalaman konser yang aman dan eksklusif dari
+            layar Anda.
+          </p>
+          <div className="auth-highlights">
+            <div>
+              <p className="auth-highlight-label">Tiket resmi</p>
+              <p className="auth-highlight-value">
+                Pembelian cepat & terverifikasi
+              </p>
+            </div>
+            <div>
+              <p className="auth-highlight-label">Blockchain</p>
+              <p className="auth-highlight-value">
+                Riwayat transaksi transparan
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <form className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="nama@email.com"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
+        <div className="auth-panel auth-card">
+          <div className="auth-tabs" role="tablist" aria-label="Auth tabs">
+            <Link
+              href="/login"
+              className="auth-tab active"
+              aria-selected="true"
+              role="tab"
+            >
+              Masuk
+            </Link>
+            <Link href="/register" className="auth-tab" role="tab">
+              Daftar
+            </Link>
           </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="field-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="nama@email.com"
+                className="auth-input"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200"
-          >
-            Masuk
-          </button>
-        </form>
+            <div className="field-group">
+              <div className="field-row">
+                <label htmlFor="password">Kata Sandi</label>
+                <Link href="/forgot-password" className="field-link">
+                  Lupa kata sandi?
+                </Link>
+              </div>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                className="auth-input"
+              />
+            </div>
 
-        <p className="text-gray-400 text-center mt-6 text-sm">
-          Belum punya akun?{" "}
-          <a href="/register" className="text-purple-400 hover:text-purple-300 underline">
-            Daftar sekarang
-          </a>
-        </p>
-      </div>
-    </div>
+            {error ? <p className="auth-error">{error}</p> : null}
+
+            <button type="submit" disabled={loading} className="auth-button">
+              {loading ? "Memproses..." : "Masuk ke Akun"}
+            </button>
+
+            <p className="auth-note">
+              Masuk langsung menggunakan akun Google atau Apple dalam satu
+              langkah.
+            </p>
+          </form>
+        </div>
+      </section>
+    </main>
   );
 }

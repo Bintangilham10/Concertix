@@ -1,78 +1,159 @@
+"use client";
+
+import Link from "next/link";
+import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { register } from "@/lib/api";
+
 export default function RegisterPage() {
+  const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+
+    if (!fullName || !email || !password || !confirmPassword) {
+      setError("Semua field harus diisi.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Password dan konfirmasi password tidak cocok.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const data = await register(email, password, fullName);
+      localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("refresh_token", data.refresh_token);
+      router.push("/");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Pendaftaran gagal.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950">
-      <div className="w-full max-w-md p-8 bg-gray-900 rounded-2xl border border-gray-800 shadow-xl">
-        <h1 className="text-2xl font-bold text-white text-center mb-2">
-          Daftar di Concertix
-        </h1>
-        <p className="text-gray-400 text-center mb-8">
-          Buat akun baru untuk mulai membeli tiket konser
-        </p>
+    <main className="auth-shell">
+      <div className="auth-glow" />
+      <section className="auth-grid">
+        <div className="auth-panel auth-info">
+          <p className="eyebrow">KBR 2026 · Konser Bandung Raya</p>
+          <h1 className="auth-title">Mulai perjalananmu bersama Concertix</h1>
+          <p className="auth-copy">
+            Daftar untuk membeli tiket resmi, mengamankan akses backstage, dan
+            mendapatkan notifikasi lineup terbaru dalam satu platform.
+          </p>
+          <div className="auth-highlights">
+            <div>
+              <p className="auth-highlight-label">Keamanan</p>
+              <p className="auth-highlight-value">
+                Verifikasi blockchain otomatis
+              </p>
+            </div>
+            <div>
+              <p className="auth-highlight-label">Akses eksklusif</p>
+              <p className="auth-highlight-value">
+                Update langsung dari panitia
+              </p>
+            </div>
+          </div>
+        </div>
 
-        <form className="space-y-4">
-          <div>
-            <label htmlFor="full_name" className="block text-sm font-medium text-gray-300 mb-1">
-              Nama Lengkap
-            </label>
-            <input
-              id="full_name"
-              type="text"
-              placeholder="Nama lengkap"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
+        <div className="auth-panel auth-card">
+          <div className="auth-tabs" role="tablist" aria-label="Auth tabs">
+            <Link href="/login" className="auth-tab" role="tab">
+              Masuk
+            </Link>
+            <Link
+              href="/register"
+              className="auth-tab active"
+              aria-selected="true"
+              role="tab"
+            >
+              Daftar
+            </Link>
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              placeholder="nama@email.com"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="auth-form">
+            <div className="field-group">
+              <label htmlFor="full_name">Nama Lengkap</label>
+              <input
+                id="full_name"
+                type="text"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                placeholder="Nama lengkap"
+                className="auth-input"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-1">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+            <div className="field-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="nama@email.com"
+                className="auth-input"
+              />
+            </div>
 
-          <div>
-            <label htmlFor="confirm_password" className="block text-sm font-medium text-gray-300 mb-1">
-              Konfirmasi Password
-            </label>
-            <input
-              id="confirm_password"
-              type="password"
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
+            <div className="field-group">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                placeholder="••••••••"
+                className="auth-input"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors duration-200"
-          >
-            Daftar
-          </button>
-        </form>
+            <div className="field-group">
+              <label htmlFor="confirm_password">Konfirmasi Password</label>
+              <input
+                id="confirm_password"
+                type="password"
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+                placeholder="••••••••"
+                className="auth-input"
+              />
+            </div>
 
-        <p className="text-gray-400 text-center mt-6 text-sm">
-          Sudah punya akun?{" "}
-          <a href="/login" className="text-purple-400 hover:text-purple-300 underline">
-            Masuk
-          </a>
-        </p>
-      </div>
-    </div>
+            {error ? <p className="auth-error">{error}</p> : null}
+
+            <button type="submit" disabled={loading} className="auth-button">
+              {loading ? "Memproses..." : "Buat Akun"}
+            </button>
+
+            <p className="auth-note">
+              Dengan mendaftar, kamu mendapatkan akses penuh ke pembelian tiket,
+              jadwal konser, dan notifikasi VIP.
+            </p>
+          </form>
+
+          <p className="auth-footer">
+            Sudah punya akun?{" "}
+            <Link href="/login" className="auth-link">
+              Masuk di sini
+            </Link>
+          </p>
+        </div>
+      </section>
+    </main>
   );
 }
