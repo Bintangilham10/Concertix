@@ -24,7 +24,9 @@ ALLOWED_ORIGINS = [
 
 # Read production origin from env if set
 if hasattr(settings, "CORS_ALLOWED_ORIGIN") and settings.CORS_ALLOWED_ORIGIN:
-    ALLOWED_ORIGINS.append(settings.CORS_ALLOWED_ORIGIN)
+    # Handle comma-separated list of origins
+    origins = [origin.strip() for origin in settings.CORS_ALLOWED_ORIGIN.split(",") if origin.strip()]
+    ALLOWED_ORIGINS.extend(origins)
 
 app.add_middleware(
     CORSMiddleware,
