@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -5,17 +7,32 @@ export default function AdminDashboardPage() {
       <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <a href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <Link
+              href="/"
+              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+            >
               Concertix
-            </a>
+            </Link>
             <span className="px-2 py-0.5 bg-purple-600/20 text-purple-300 text-xs font-medium rounded-full border border-purple-500/30">
               Admin
             </span>
           </div>
           <nav className="flex items-center gap-6 text-sm">
-            <a href="/admin" className="text-white font-medium">Dashboard</a>
-            <a href="/admin/concerts" className="text-gray-400 hover:text-white transition-colors">Konser</a>
-            <a href="/admin/transactions" className="text-gray-400 hover:text-white transition-colors">Transaksi</a>
+            <a href="/admin" className="text-white font-medium">
+              Dashboard
+            </a>
+            <a
+              href="/admin/concerts"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Konser
+            </a>
+            <a
+              href="/admin/transactions"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Transaksi
+            </a>
           </nav>
         </div>
       </header>

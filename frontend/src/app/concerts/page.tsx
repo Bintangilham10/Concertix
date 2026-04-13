@@ -1,17 +1,28 @@
+import Link from "next/link";
+
 export default function ConcertsPage() {
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <Link
+            href="/"
+            className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
+          >
             Concertix
-          </a>
+          </Link>
           <nav className="flex items-center gap-6">
-            <a href="/concerts" className="text-gray-300 hover:text-white transition-colors">
+            <a
+              href="/concerts"
+              className="text-gray-300 hover:text-white transition-colors"
+            >
               Konser
             </a>
-            <a href="/login" className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors">
+            <a
+              href="/login"
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg text-sm font-medium transition-colors"
+            >
               Masuk
             </a>
           </nav>

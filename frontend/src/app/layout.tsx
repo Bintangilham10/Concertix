@@ -14,12 +14,6 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="id">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap"
-          rel="stylesheet"
-        />
-      </head>
       <body>{children}</body>
     </html>
   );
