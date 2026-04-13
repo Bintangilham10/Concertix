@@ -1065,18 +1065,24 @@ export default function Home() {
             })}
 
             <div style={{ textAlign: "center", marginTop: "36px" }}>
-              <button
+              <a
+                href="https://wa.me/6282244356217?text=Halo%20CS%20Concertix%2C%20saya%20butuh%20bantuan."
+                target="_blank"
+                rel="noreferrer"
                 className="btn-primary"
                 style={{
                   padding: "12px 28px",
                   fontSize: "14px",
                   borderRadius: "10px",
                   fontWeight: 800,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-                aria-label="Hubungi customer service"
+                aria-label="Hubungi customer service melalui WhatsApp"
               >
                 Butuh Bantuan? Chat CS →
-              </button>
+              </a>
             </div>
           </div>
         </section>
@@ -1103,11 +1109,6 @@ export default function Home() {
             QRIS
           </div>
         </div>
-        <nav className="footer-links" aria-label="Tautan footer">
-          <a href="#">Syarat &amp; Ketentuan</a>
-          <a href="#">Kebijakan Privasi</a>
-          <a href="#">Hubungi Kami</a>
-        </nav>
         <p className="footer-copy">
           © 2026 Konser Bandung Raya. All rights reserved.
         </p>
