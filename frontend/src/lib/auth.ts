@@ -1,90 +1,8 @@
-import { supabase } from "./supabase";
-import type { User } from "@/types";
+import { getMe, login, logoutApi, register } from "./api";
+import type { AuthResponse, User } from "@/types";
 
 /**
- * Login with Supabase Auth.
- */
-export async function loginWithSupabase(email: string, password: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-/**
- * Register with Supabase Auth.
- */
-export async function registerWithSupabase(
-  email: string,
-  password: string,
-  fullName: string
-) {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      data: {
-        full_name: fullName,
-        role: "customer",
-      },
-    },
-  });
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-/**
- * Logout from Supabase Auth.
- */
-export async function logoutSupabase() {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw new Error(error.message);
-}
-
-/**
- * Get current Supabase session user.
- */
-export async function getSupabaseUser(): Promise<User | null> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return null;
-
-  return {
-    id: user.id,
-    email: user.email ?? "",
-    full_name: user.user_metadata?.full_name ?? "User",
-    role: user.app_metadata?.role ?? user.user_metadata?.role ?? "customer",
-    created_at: user.created_at,
-  };
-}
-
-/**
- * Check if user is authenticated via Supabase.
- */
-export async function isAuthenticatedSupabase(): Promise<boolean> {
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  return !!session;
-}
-
-/**
- * Check if current user is admin.
- */
-export async function isAdminSupabase(): Promise<boolean> {
-  const user = await getSupabaseUser();
-  return user?.role === "admin";
-}
-
-/**
- * Get stored auth info (synchronous, for quick checks).
- * Falls back to localStorage cache.
+ * Get cached user from localStorage.
  */
 export function getStoredUser(): User | null {
   if (typeof window === "undefined") return null;
@@ -98,14 +16,73 @@ export function getStoredUser(): User | null {
 }
 
 /**
- * Save user info to localStorage cache.
+ * Cache user profile in localStorage.
  */
 export function cacheUser(user: User): void {
   localStorage.setItem("concertix_user", JSON.stringify(user));
 }
 
 /**
- * Clear cached user data.
+ * Store auth tokens and user profile from backend JWT response.
+ */
+function persistAuth(auth: AuthResponse): User {
+  localStorage.setItem("access_token", auth.access_token);
+  localStorage.setItem("refresh_token", auth.refresh_token);
+  cacheUser(auth.user);
+  return auth.user;
+}
+
+/**
+ * Login via backend JWT auth.
+ */
+export async function loginWithJwt(
+  email: string,
+  password: string
+): Promise<User> {
+  const auth = await login(email, password);
+  return persistAuth(auth);
+}
+
+/**
+ * Register via backend JWT auth.
+ */
+export async function registerWithJwt(
+  email: string,
+  password: string,
+  fullName: string
+): Promise<User> {
+  const auth = await register(email, password, fullName);
+  return persistAuth(auth);
+}
+
+/**
+ * Resolve current user from backend using access token.
+ */
+export async function getCurrentUser(): Promise<User | null> {
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("access_token");
+  if (!token) return null;
+
+  try {
+    const user = await getMe();
+    cacheUser(user);
+    return user;
+  } catch {
+    clearCache();
+    return null;
+  }
+}
+
+/**
+ * Logout from backend and clear local auth state.
+ */
+export async function logoutJwt(): Promise<void> {
+  await logoutApi();
+  clearCache();
+}
+
+/**
+ * Clear local auth cache and tokens.
  */
 export function clearCache(): void {
   localStorage.removeItem("concertix_user");

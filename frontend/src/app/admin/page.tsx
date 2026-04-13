@@ -3,12 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import {
-  logoutSupabase,
-  getSupabaseUser,
-  cacheUser,
-  clearCache,
-} from "@/lib/auth";
+import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
 import type { User } from "@/types";
 
 export default function AdminDashboardPage() {
@@ -20,20 +15,19 @@ export default function AdminDashboardPage() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const supabaseUser = await getSupabaseUser();
+        const currentUser = await getCurrentUser();
 
-        if (!supabaseUser) {
+        if (!currentUser) {
           router.replace("/login");
           return;
         }
 
-        if (supabaseUser.role !== "admin") {
+        if (currentUser.role !== "admin") {
           router.replace("/");
           return;
         }
 
-        cacheUser(supabaseUser);
-        setUser(supabaseUser);
+        setUser(currentUser);
         setChecking(false);
       } catch {
         router.replace("/login");
@@ -46,11 +40,11 @@ export default function AdminDashboardPage() {
   const handleLogout = async () => {
     setLoggingOut(true);
     try {
-      await logoutSupabase();
+      await logoutJwt();
     } catch {
-      // Even if server logout fails, clear local state
+      // Even if backend logout fails, clear local state
+      clearCache();
     }
-    clearCache();
     router.replace("/login");
   };
 

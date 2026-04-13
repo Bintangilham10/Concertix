@@ -7,7 +7,7 @@ export interface User {
   email: string;
   full_name: string;
   role: UserRole;
-  created_at: string;
+  created_at?: string;
 }
 
 export interface Concert {
