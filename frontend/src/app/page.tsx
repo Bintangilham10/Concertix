@@ -561,16 +561,16 @@ export default function Home() {
                 </div>
               </div>
 
-              <button
+              <a
+                href="#tickets"
                 className="hero-cta"
-                onClick={() => openModal("VIP", "Rp 1.250.000", 1250000)}
-                aria-label="Beli tiket konser sekarang"
+                aria-label="Pergi ke bagian Pilih Tiket"
               >
                 Beli Tiket Sekarang
                 <span className="cta-arrow" aria-hidden="true">
                   →
                 </span>
-              </button>
+              </a>
             </div>
 
             <div
@@ -998,7 +998,8 @@ export default function Home() {
                   </div>
                 </li>
               </ul>
-              <button
+              <a
+                href="#tickets"
                 className="btn-primary"
                 style={{
                   padding: "16px 36px",
@@ -1007,12 +1008,14 @@ export default function Home() {
                   fontWeight: 800,
                   letterSpacing: "0.5px",
                   boxShadow: "0 8px 24px rgba(123,44,191,0.3)",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-                onClick={() => openModal("Regular", "Rp 750.000", 750000)}
-                aria-label="Amankan tiket sekarang"
+                aria-label="Pergi ke bagian Pilih Tiket"
               >
                 Amankan Tiket Sekarang →
-              </button>
+              </a>
             </div>
           </div>
         </section>
