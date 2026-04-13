@@ -1,6 +1,71 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import {
+  logoutSupabase,
+  getSupabaseUser,
+  cacheUser,
+  clearCache,
+} from "@/lib/auth";
+import type { User } from "@/types";
 
 export default function AdminDashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<User | null>(null);
+  const [checking, setChecking] = useState(true);
+  const [loggingOut, setLoggingOut] = useState(false);
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const supabaseUser = await getSupabaseUser();
+
+        if (!supabaseUser) {
+          router.replace("/login");
+          return;
+        }
+
+        if (supabaseUser.role !== "admin") {
+          router.replace("/");
+          return;
+        }
+
+        cacheUser(supabaseUser);
+        setUser(supabaseUser);
+        setChecking(false);
+      } catch {
+        router.replace("/login");
+      }
+    }
+
+    checkAuth();
+  }, [router]);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try {
+      await logoutSupabase();
+    } catch {
+      // Even if server logout fails, clear local state
+    }
+    clearCache();
+    router.replace("/login");
+  };
+
+  // Show loading state while checking auth
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-4" />
+          <p className="text-gray-400">Memverifikasi akses...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Admin Header */}
@@ -34,12 +99,38 @@ export default function AdminDashboardPage() {
               Transaksi
             </a>
           </nav>
+          <div className="flex items-center gap-4">
+            {user && (
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-white">
+                  {user.full_name}
+                </p>
+                <p className="text-xs text-gray-400">{user.email}</p>
+              </div>
+            )}
+            <button
+              onClick={handleLogout}
+              disabled={loggingOut}
+              className="px-4 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            >
+              {loggingOut ? "Keluar..." : "Logout"}
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
-        <h1 className="text-3xl font-bold mb-8">Dashboard Admin</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Dashboard Admin</h1>
+            {user && (
+              <p className="text-gray-400 mt-1">
+                Selamat datang, {user.full_name} 👋
+              </p>
+            )}
+          </div>
+        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">

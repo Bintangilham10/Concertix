@@ -96,6 +96,17 @@ async def logout(
     }
 
 
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Return the currently authenticated user's profile.
+    Used by the frontend to verify auth state and check role on page load.
+    """
+    return current_user
+
+
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh(request: TokenRefreshRequest, db: Session = Depends(get_db)):
     """Refresh access token using a valid refresh token."""

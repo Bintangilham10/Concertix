@@ -1,4 +1,4 @@
-import type { ApiResponse, AuthResponse } from "@/types";
+import type { AuthResponse, User } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -9,7 +9,7 @@ const API_BASE_URL =
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
-): Promise<ApiResponse<T>> {
+): Promise<T> {
   const token =
     typeof window !== "undefined"
       ? localStorage.getItem("access_token")
@@ -42,11 +42,10 @@ export async function login(
   email: string,
   password: string
 ): Promise<AuthResponse> {
-  const res = await fetchApi<AuthResponse>("/auth/login", {
+  return fetchApi<AuthResponse>("/auth/login", {
     method: "POST",
     body: JSON.stringify({ email, password }),
   });
-  return res.data;
 }
 
 export async function register(
@@ -54,21 +53,34 @@ export async function register(
   password: string,
   full_name: string
 ): Promise<AuthResponse> {
-  const res = await fetchApi<AuthResponse>("/auth/register", {
+  return fetchApi<AuthResponse>("/auth/register", {
     method: "POST",
     body: JSON.stringify({ email, password, full_name }),
   });
-  return res.data;
 }
 
 export async function refreshToken(
   refresh_token: string
 ): Promise<AuthResponse> {
-  const res = await fetchApi<AuthResponse>("/auth/refresh", {
+  return fetchApi<AuthResponse>("/auth/refresh", {
     method: "POST",
     body: JSON.stringify({ refresh_token }),
   });
-  return res.data;
+}
+
+export async function getMe(): Promise<User> {
+  return fetchApi<User>("/auth/me");
+}
+
+export async function logoutApi(): Promise<void> {
+  try {
+    await fetchApi<{ message: string }>("/auth/logout", {
+      method: "POST",
+    });
+  } catch {
+    // Even if the server rejects (e.g. token already expired), we still
+    // clear local state in the calling code.
+  }
 }
 
 // ── Concerts API ──

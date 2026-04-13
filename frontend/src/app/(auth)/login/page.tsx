@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/api";
+import { loginWithSupabase, getSupabaseUser, cacheUser } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -24,10 +24,24 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const data = await login(email, password);
-      localStorage.setItem("access_token", data.access_token);
-      localStorage.setItem("refresh_token", data.refresh_token);
-      router.push("/");
+      // Login via Supabase Auth
+      await loginWithSupabase(email, password);
+
+      // Get user info (includes role from app_metadata)
+      const user = await getSupabaseUser();
+
+      if (user) {
+        cacheUser(user);
+
+        // Redirect based on role
+        if (user.role === "admin") {
+          router.push("/admin");
+        } else {
+          router.push("/");
+        }
+      } else {
+        router.push("/");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Login gagal.";
       setError(message);
@@ -52,7 +66,7 @@ export default function LoginPage() {
             <div>
               <p className="auth-highlight-label">Tiket resmi</p>
               <p className="auth-highlight-value">
-                Pembelian cepat & terverifikasi
+                Pembelian cepat &amp; terverifikasi
               </p>
             </div>
             <div>
