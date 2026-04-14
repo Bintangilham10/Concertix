@@ -21,7 +21,8 @@ security = HTTPBearer()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_data: UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("3/minute")
+async def register(request: Request, user_data: UserCreate, db: Session = Depends(get_db)):
     """Register a new customer account."""
     # Check if email already exists
     existing_user = db.query(User).filter(User.email == user_data.email).first()
