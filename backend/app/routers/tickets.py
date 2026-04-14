@@ -1,5 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -114,3 +115,68 @@ async def verify_ticket(
         result["blockchain_records"] = len(blocks)
 
     return result
+
+
+@router.get("/{ticket_id}/pdf")
+async def download_ticket_pdf(
+    ticket_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Download a PDF e-ticket.
+
+    Only the ticket owner can download their ticket.
+    The ticket must be in 'paid' or 'used' status.
+    """
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.user_id == current_user.id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tiket tidak ditemukan",
+        )
+
+    if ticket.status not in ("paid", "used"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Tiket belum dibayar, tidak bisa diunduh",
+        )
+
+    concert = db.query(Concert).filter(Concert.id == ticket.concert_id).first()
+    if not concert:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Data konser tidak ditemukan",
+        )
+
+    # Format date for display
+    concert_date_str = concert.date.strftime("%d %B %Y") if concert.date else "-"
+
+    from app.services.ticket_pdf_service import generate_ticket_pdf
+
+    pdf_bytes = generate_ticket_pdf(
+        ticket_id=ticket.id,
+        concert_name=concert.name,
+        concert_artist=concert.artist,
+        concert_venue=concert.venue,
+        concert_date=concert_date_str,
+        concert_time=concert.time,
+        concert_price=concert.price,
+        buyer_name=current_user.full_name,
+        buyer_email=current_user.email,
+        ticket_status=ticket.status,
+    )
+
+    filename = f"concertix-ticket-{ticket.id[:8]}.pdf"
+
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        },
+    )
