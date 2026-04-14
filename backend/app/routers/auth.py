@@ -54,25 +54,39 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login")
 async def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
-    """Authenticate user and return JWT tokens."""
-    user = db.query(User).filter(User.email == credentials.email).first()
-    if not user or not verify_password(credentials.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email atau password salah",
-        )
+    """Authenticate user and return JWT tokens (with debug)."""
+    try:
+        user = db.query(User).filter(User.email == credentials.email).first()
+        if not user or not verify_password(credentials.password, user.password_hash):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Email atau password salah",
+            )
 
-    token_data = {"sub": user.id}
-    access_token = create_access_token(token_data)
-    refresh_token = create_refresh_token(token_data)
+        token_data = {"sub": user.id}
+        access_token = create_access_token(token_data)
+        refresh_token = create_refresh_token(token_data)
 
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        user=UserResponse.model_validate(user),
-    )
+        # Build response manually to isolate pydantic errors
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": {
+                "id": str(user.id),
+                "email": user.email,
+                "full_name": user.full_name,
+                "role": user.role
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_details = traceback.format_exc()
+        raise HTTPException(status_code=400, detail=f"Debug Error: {str(e)} | Trace: {error_details}")
 
 
 @router.post("/logout")
