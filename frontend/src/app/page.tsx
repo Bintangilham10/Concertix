@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getCurrentUser, logoutJwt, clearCache } from "@/lib/auth";
+import type { User } from "@/types";
 
 // ── Types ──────────────────────────────────────────────────────────
 interface ToastData {
@@ -123,6 +125,29 @@ function formatRupiah(n: number): string {
 
 // ── Component ──────────────────────────────────────────────────────
 export default function Home() {
+  // Auth state
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [authChecking, setAuthChecking] = useState(true);
+
+  useEffect(() => {
+    async function checkUser() {
+      try {
+        const user = await getCurrentUser();
+        setCurrentUser(user);
+      } catch (err) {
+        setCurrentUser(null);
+      } finally {
+        setAuthChecking(false);
+      }
+    }
+    checkUser();
+  }, []);
+
+  const handleLogout = async () => {
+    try { await logoutJwt(); } catch { clearCache(); }
+    setCurrentUser(null);
+  };
+
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -319,16 +344,31 @@ export default function Home() {
           </ul>
 
           <div className="nav-actions">
-            <a href="/login" className="btn-ghost" aria-label="Masuk ke akun">
-              Masuk
-            </a>
-            <a
-              href="/register"
-              className="btn-primary"
-              aria-label="Daftar akun baru"
-            >
-              Daftar
-            </a>
+            {!authChecking && currentUser ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <span style={{ color: "#fff", fontSize: "14px", fontWeight: 500 }}>
+                  Hi, {currentUser.full_name}
+                </span>
+                <button onClick={handleLogout} className="btn-ghost" aria-label="Logout" style={{ cursor: "pointer", fontFamily: "inherit" }}>
+                  Logout
+                </button>
+              </div>
+            ) : (
+              !authChecking && (
+                <>
+                  <a href="/login" className="btn-ghost" aria-label="Masuk ke akun">
+                    Masuk
+                  </a>
+                  <a
+                    href="/register"
+                    className="btn-primary"
+                    aria-label="Daftar akun baru"
+                  >
+                    Daftar
+                  </a>
+                </>
+              )
+            )}
           </div>
 
           <button
