@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getCurrentUser, logoutJwt, clearCache } from "@/lib/auth";
+import { orderTicket, createPayment } from "@/lib/api";
 import type { User } from "@/types";
+
+// ── Concert IDs (from database) ────────────────────────────────────
+const CONCERT_IDS: Record<string, string> = {
+  VIP: "a5ec93d2-7c9d-4936-983e-5c6a6a9f3a5c",
+  Regular: "e541329f-0d25-46d5-b1ea-b4ae8dd649e5",
+};
 
 // ── Types ──────────────────────────────────────────────────────────
 interface ToastData {
@@ -247,7 +254,14 @@ export default function Home() {
   };
 
   // ── Checkout ───────────────────────────────────────────────────
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
+    // Check if user is logged in
+    if (!currentUser) {
+      showToast("⚠️", "Login Diperlukan", "Silakan login terlebih dahulu untuk membeli tiket.", 3000);
+      setTimeout(() => { window.location.href = "/login"; }, 1500);
+      return;
+    }
+
     const nOk = buyerName.trim().length > 1;
     const eOk = buyerEmail.includes("@") && buyerEmail.includes(".");
     const pOk = buyerPhone.trim().length >= 8;
@@ -257,36 +271,42 @@ export default function Home() {
     setPhoneError(!pOk);
 
     if (!nOk || !eOk || !pOk) {
-      showToast(
-        "⚠️",
-        "Periksa Form",
-        "Ada data yang belum diisi dengan benar.",
-        3000,
-      );
+      showToast("⚠️", "Periksa Form", "Ada data yang belum diisi dengan benar.", 3000);
       return;
     }
 
-    setCheckoutText("Memproses Pembayaran...");
+    setCheckoutText("Memproses Pesanan...");
     setCheckoutDisabled(true);
 
-    setTimeout(() => {
+    try {
+      // Step 1: Order ticket via API
+      const concertId = CONCERT_IDS[modalType];
+      if (!concertId) throw new Error("Tipe tiket tidak valid");
+
+      const ticketResult = await orderTicket(concertId, qty) as { id: string } | { id: string }[];
+      const ticketId = Array.isArray(ticketResult) ? ticketResult[0].id : ticketResult.id;
+
+      setCheckoutText("Membuat Pembayaran...");
+
+      // Step 2: Create payment via Midtrans
+      const paymentResult = await createPayment(ticketId) as { redirect_url: string; snap_token: string };
+
       setCheckoutText("✓ Dialihkan ke Midtrans...");
-      setCheckoutStyle({
-        background: "linear-gradient(135deg, #10B981, #059669)",
-      });
-      showToast(
-        "🎉",
-        "Pembayaran Diproses!",
-        "Kamu akan diarahkan ke halaman Midtrans.",
-        4000,
-      );
+      setCheckoutStyle({ background: "linear-gradient(135deg, #10B981, #059669)" });
+      showToast("🎉", "Pembayaran Dibuat!", "Kamu akan diarahkan ke halaman Midtrans.", 4000);
+
+      // Step 3: Redirect to Midtrans payment page
       setTimeout(() => {
-        closeModal();
-        setCheckoutText("Lanjut ke Pembayaran →");
-        setCheckoutDisabled(false);
-        setCheckoutStyle({});
-      }, 2500);
-    }, 1600);
+        window.location.href = paymentResult.redirect_url;
+      }, 1500);
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Gagal memproses pesanan";
+      showToast("❌", "Gagal", message, 4000);
+      setCheckoutText("Lanjut ke Pembayaran →");
+      setCheckoutDisabled(false);
+      setCheckoutStyle({});
+    }
   };
 
   // ── FAQ toggle ─────────────────────────────────────────────────
