@@ -217,7 +217,7 @@ export default function Home() {
 
   // ── Quantity ───────────────────────────────────────────────────
   const changeQty = (delta: number) => {
-    setQty((prev) => Math.max(1, Math.min(10, prev + delta)));
+    setQty((prev) => Math.max(1, Math.min(2, prev + delta)));
   };
 
   // ── Checkout ───────────────────────────────────────────────────
@@ -1245,16 +1245,84 @@ export default function Home() {
                 Nomor WhatsApp wajib diisi
               </div>
             </div>
-            <div className="modal-total">
-              <div className="modal-total-label">Total Pembayaran</div>
+            <div
+              className="modal-total-detail"
+              style={{
+                background: "rgba(139, 92, 246, 0.1)",
+                padding: "16px",
+                borderRadius: "12px",
+                border: "1px solid rgba(139, 92, 246, 0.3)",
+                marginTop: "16px",
+                marginBottom: "20px",
+              }}
+            >
               <div
-                className="modal-total-price"
-                id="modal-total"
-                aria-live="polite"
-                aria-atomic="true"
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                  fontSize: "0.9rem",
+                  color: "#d8b4fe",
+                }}
               >
-                {formatRupiah(currentPrice * qty)}
+                <span>
+                  Harga Tiket ({qty}x {formatRupiah(currentPrice)})
+                </span>
+                <span>{formatRupiah(currentPrice * qty)}</span>
               </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "12px",
+                  fontSize: "0.9rem",
+                  color: "#d8b4fe",
+                }}
+              >
+                <span>Biaya Platform</span>
+                <span style={{ color: "#34d399", fontWeight: 500 }}>Gratis</span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderTop: "1px dashed rgba(139, 92, 246, 0.3)",
+                  paddingTop: "12px",
+                  fontWeight: "bold",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ color: "#fff", fontSize: "0.95rem" }}>
+                  Total Pembayaran
+                </span>
+                <span
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.3rem",
+                    textShadow: "0 0 10px rgba(139, 92, 246, 0.5)",
+                  }}
+                  id="modal-total"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {formatRupiah(currentPrice * qty)}
+                </span>
+              </div>
+              {qty === 2 && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "0.8rem",
+                    color: "#fca5a5",
+                    textAlign: "center",
+                    backgroundColor: "rgba(220, 38, 38, 0.2)",
+                    padding: "6px",
+                    borderRadius: "6px",
+                  }}
+                >
+                  ⚠️ Maksimal pembelian dibatasi 2 tiket per transaksi
+                </div>
+              )}
             </div>
             <button
               className="checkout-btn"
