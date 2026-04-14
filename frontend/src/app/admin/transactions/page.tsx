@@ -187,6 +187,12 @@ export default function AdminTransactionsPage() {
             <a href="/admin/transactions" className="text-white font-medium">
               Transaksi
             </a>
+            <a
+              href="/admin/users"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Pengguna
+            </a>
           </nav>
           <div className="flex items-center gap-4">
             {user && (

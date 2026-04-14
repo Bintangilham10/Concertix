@@ -124,6 +124,12 @@ export default function AdminDashboardPage() {
             >
               Transaksi
             </a>
+            <a
+              href="/admin/users"
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              Pengguna
+            </a>
           </nav>
           <div className="flex items-center gap-4">
             {user && (
