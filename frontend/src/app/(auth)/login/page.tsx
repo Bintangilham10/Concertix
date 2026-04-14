@@ -30,10 +30,10 @@ export default function LoginPage() {
         if (user.role === "admin") {
           router.push("/admin");
         } else {
-          router.push("/");
+          router.push("/#tickets");
         }
       } else {
-        router.push("/");
+        router.push("/#tickets");
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Login gagal.";

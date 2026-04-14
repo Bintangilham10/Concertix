@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getStoredUser, logoutJwt, clearCache, getCurrentUser } from "@/lib/auth";
+import type { User } from "@/types";
 
 // ── Types ──────────────────────────────────────────────────────────
 interface ToastData {
@@ -123,6 +125,10 @@ function formatRupiah(n: number): string {
 
 // ── Component ──────────────────────────────────────────────────────
 export default function Home() {
+  // Auth state
+  const [authUser, setAuthUser] = useState<User | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
 
@@ -160,6 +166,22 @@ export default function Home() {
 
   // Name input ref for focus
   const nameInputRef = useRef<HTMLInputElement>(null);
+
+  // ── Auth check on mount ───────────────────────────────────────
+  useEffect(() => {
+    const stored = getStoredUser();
+    if (stored) {
+      setAuthUser(stored);
+      getCurrentUser().then((u) => { if (u) setAuthUser(u); }).catch(() => {});
+    }
+  }, []);
+
+  const handleLogout = async () => {
+    setLoggingOut(true);
+    try { await logoutJwt(); } catch { clearCache(); }
+    setAuthUser(null);
+    setLoggingOut(false);
+  };
 
   // ── Toast handler ──────────────────────────────────────────────
   const showToast = useCallback(
@@ -319,16 +341,34 @@ export default function Home() {
           </ul>
 
           <div className="nav-actions">
-            <a href="/login" className="btn-ghost" aria-label="Masuk ke akun">
-              Masuk
-            </a>
-            <a
-              href="/register"
-              className="btn-primary"
-              aria-label="Daftar akun baru"
-            >
-              Daftar
-            </a>
+            {authUser ? (
+              <>
+                <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.85rem", fontWeight: 600 }}>
+                  👤 {authUser.full_name}
+                </span>
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="btn-ghost"
+                  style={{ cursor: "pointer", color: "#f87171", border: "1px solid rgba(248,113,113,0.3)", borderRadius: "8px" }}
+                >
+                  {loggingOut ? "Keluar..." : "Logout"}
+                </button>
+              </>
+            ) : (
+              <>
+                <a href="/login" className="btn-ghost" aria-label="Masuk ke akun">
+                  Masuk
+                </a>
+                <a
+                  href="/register"
+                  className="btn-primary"
+                  aria-label="Daftar akun baru"
+                >
+                  Daftar
+                </a>
+              </>
+            )}
           </div>
 
           <button
@@ -390,12 +430,30 @@ export default function Home() {
           FAQ
         </a>
         <div className="nav-drawer-actions">
-          <a href="/login" className="btn-ghost" onClick={closeDrawer}>
-            Masuk
-          </a>
-          <a href="/register" className="btn-primary" onClick={closeDrawer}>
-            Daftar
-          </a>
+          {authUser ? (
+            <>
+              <span style={{ color: "rgba(255,255,255,0.85)", fontSize: "0.9rem", fontWeight: 600, padding: "8px 0" }}>
+                👤 {authUser.full_name}
+              </span>
+              <button
+                onClick={() => { handleLogout(); closeDrawer(); }}
+                disabled={loggingOut}
+                className="btn-ghost"
+                style={{ cursor: "pointer", color: "#f87171" }}
+              >
+                {loggingOut ? "Keluar..." : "Logout"}
+              </button>
+            </>
+          ) : (
+            <>
+              <a href="/login" className="btn-ghost" onClick={closeDrawer}>
+                Masuk
+              </a>
+              <a href="/register" className="btn-primary" onClick={closeDrawer}>
+                Daftar
+              </a>
+            </>
+          )}
         </div>
       </div>
 
