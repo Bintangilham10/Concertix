@@ -19,234 +19,177 @@ export default function AdminDashboardPage() {
     async function checkAuth() {
       try {
         const currentUser = await getCurrentUser();
-
-        if (!currentUser) {
-          router.replace("/login");
-          return;
-        }
-
-        if (currentUser.role !== "admin") {
-          router.replace("/");
-          return;
-        }
-
+        if (!currentUser) { router.replace("/login"); return; }
+        if (currentUser.role !== "admin") { router.replace("/"); return; }
         setUser(currentUser);
         setChecking(false);
-
-        // Fetch dashboard stats
         try {
           const data = await getAdminStats();
           setStats(data);
         } catch (err) {
-          setStatsError(
-            err instanceof Error ? err.message : "Gagal memuat statistik"
-          );
+          setStatsError(err instanceof Error ? err.message : "Gagal memuat statistik");
         }
-      } catch {
-        router.replace("/login");
-      }
+      } catch { router.replace("/login"); }
     }
-
     checkAuth();
   }, [router]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
-    try {
-      await logoutJwt();
-    } catch {
-      // Even if backend logout fails, clear local state
-      clearCache();
-    }
+    try { await logoutJwt(); } catch { clearCache(); }
     router.replace("/login");
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("id-ID", {
-      style: "currency",
-      currency: "IDR",
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(amount);
 
-  const formatDate = (dateStr: string | null) => {
-    if (!dateStr) return "-";
-    return new Date(dateStr).toLocaleDateString("id-ID", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
-  // Show loading state while checking auth
   if (checking) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-400">Memverifikasi akses...</p>
+      <div style={{ minHeight: "100vh", background: "#0a0a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, border: "3px solid #7c3aed", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ color: "#9ca3af" }}>Memverifikasi akses...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Admin Header */}
-      <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
-            >
+    <div style={{ minHeight: "100vh", background: "#0a0a1a", color: "#fff", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      {/* ── Header ── */}
+      <header style={{
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(10,10,26,0.85)",
+        backdropFilter: "blur(20px)",
+        position: "sticky", top: 0, zIndex: 100,
+      }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Link href="/" style={{ fontSize: 20, fontWeight: 800, background: "linear-gradient(135deg, #a78bfa, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textDecoration: "none" }}>
               Concertix
             </Link>
-            <span className="px-2 py-0.5 bg-purple-600/20 text-purple-300 text-xs font-medium rounded-full border border-purple-500/30">
+            <span style={{ padding: "2px 10px", background: "rgba(124,58,237,0.15)", color: "#c084fc", fontSize: 11, fontWeight: 600, borderRadius: 100, border: "1px solid rgba(124,58,237,0.3)" }}>
               Admin
             </span>
           </div>
-          <nav className="flex items-center gap-6 text-sm">
-            <a href="/admin" className="text-white font-medium">
-              Dashboard
-            </a>
-            <a
-              href="/admin/concerts"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Konser
-            </a>
-            <a
-              href="/admin/transactions"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Transaksi
-            </a>
-            <a
-              href="/admin/users"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Pengguna
-            </a>
+
+          <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            {[
+              { href: "/admin", label: "Dashboard", active: true },
+              { href: "/admin/concerts", label: "Konser", active: false },
+              { href: "/admin/transactions", label: "Transaksi", active: false },
+              { href: "/admin/users", label: "Pengguna", active: false },
+            ].map((item) => (
+              <a key={item.href} href={item.href} style={{
+                fontSize: 13, fontWeight: item.active ? 600 : 500, textDecoration: "none",
+                color: item.active ? "#fff" : "#9ca3af",
+                borderBottom: item.active ? "2px solid #7c3aed" : "2px solid transparent",
+                paddingBottom: 4,
+              }}>
+                {item.label}
+              </a>
+            ))}
           </nav>
-          <div className="flex items-center gap-4">
+
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {user && (
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">
-                  {user.full_name}
-                </p>
-                <p className="text-xs text-gray-400">{user.email}</p>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>{user.full_name}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>{user.email}</p>
               </div>
             )}
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="px-4 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
-            >
+            <button onClick={handleLogout} disabled={loggingOut} style={{
+              padding: "8px 16px", fontSize: 13, fontWeight: 600, color: "#f87171",
+              background: "transparent", border: "1px solid rgba(248,113,113,0.3)",
+              borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
+            }}>
               {loggingOut ? "Keluar..." : "Logout"}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Dashboard Admin</h1>
-            {user && (
-              <p className="text-gray-400 mt-1">
-                Selamat datang, {user.full_name} 👋
-              </p>
-            )}
-          </div>
+      {/* ── Content ── */}
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px" }}>
+        {/* Title */}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Dashboard Admin</h1>
+          {user && <p style={{ color: "#9ca3af", marginTop: 6, fontSize: 15 }}>Selamat datang, {user.full_name} 👋</p>}
         </div>
 
-        {/* Stats Error */}
+        {/* Error */}
         {statsError && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm">
+          <div style={{ marginBottom: 24, padding: 16, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, color: "#fca5a5", fontSize: 14 }}>
             ⚠️ {statsError}
           </div>
         )}
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        {/* ── Stats Cards ── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 20, marginBottom: 40 }}>
           {[
-            {
-              label: "Total Konser",
-              value: stats ? String(stats.total_concerts) : "—",
-              icon: "🎵",
-            },
-            {
-              label: "Tiket Terjual",
-              value: stats ? String(stats.total_tickets_sold) : "—",
-              icon: "🎫",
-            },
-            {
-              label: "Pendapatan",
-              value: stats ? formatCurrency(stats.total_revenue) : "—",
-              icon: "💰",
-            },
-            {
-              label: "Pengguna",
-              value: stats ? String(stats.total_users) : "—",
-              icon: "👥",
-            },
+            { label: "Total Konser", value: stats ? String(stats.total_concerts) : "—", icon: "🎵", gradient: "linear-gradient(135deg, #7c3aed22, #7c3aed08)" },
+            { label: "Tiket Terjual", value: stats ? String(stats.total_tickets_sold) : "—", icon: "🎫", gradient: "linear-gradient(135deg, #3b82f622, #3b82f608)" },
+            { label: "Pendapatan", value: stats ? formatCurrency(stats.total_revenue) : "—", icon: "💰", gradient: "linear-gradient(135deg, #10b98122, #10b98108)" },
+            { label: "Pengguna", value: stats ? String(stats.total_users) : "—", icon: "👥", gradient: "linear-gradient(135deg, #f59e0b22, #f59e0b08)" },
           ].map((stat) => (
-            <div
-              key={stat.label}
-              className="bg-gray-900 border border-gray-800 rounded-xl p-6"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-gray-400">{stat.label}</span>
-                <span className="text-2xl">{stat.icon}</span>
+            <div key={stat.label} style={{
+              background: stat.gradient,
+              border: "1px solid rgba(255,255,255,0.06)",
+              borderRadius: 16, padding: 24,
+              transition: "transform 0.2s, box-shadow 0.2s",
+            }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <span style={{ fontSize: 13, color: "#9ca3af", fontWeight: 500 }}>{stat.label}</span>
+                <span style={{ fontSize: 28 }}>{stat.icon}</span>
               </div>
-              <p className="text-2xl font-bold">{stat.value}</p>
+              <p style={{ fontSize: 30, fontWeight: 800, margin: 0, letterSpacing: "-0.5px" }}>{stat.value}</p>
             </div>
           ))}
         </div>
 
-        {/* Concert List */}
+        {/* ── Concert Table ── */}
         {stats && stats.concerts.length > 0 && (
-          <div className="bg-gray-900 border border-gray-800 rounded-xl mb-8">
-            <div className="p-6 border-b border-gray-800">
-              <h2 className="text-lg font-semibold">Daftar Konser</h2>
+          <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, marginBottom: 32, overflow: "hidden" }}>
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>📋 Daftar Konser</h2>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                 <thead>
-                  <tr className="text-gray-400 border-b border-gray-800">
-                    <th className="text-left p-4 font-medium">Nama</th>
-                    <th className="text-left p-4 font-medium">Artis</th>
-                    <th className="text-left p-4 font-medium">Venue</th>
-                    <th className="text-right p-4 font-medium">Harga</th>
-                    <th className="text-right p-4 font-medium">Terjual</th>
-                    <th className="text-right p-4 font-medium">Sisa</th>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    {["Nama Konser", "Artis", "Venue", "Harga", "Terjual", "Sisa"].map((h, i) => (
+                      <th key={h} style={{
+                        padding: "14px 20px", fontWeight: 600, fontSize: 12,
+                        color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px",
+                        textAlign: i >= 3 ? "right" : "left", whiteSpace: "nowrap",
+                      }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {stats.concerts.map((concert) => (
-                    <tr
-                      key={concert.id}
-                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                  {stats.concerts.map((concert, idx) => (
+                    <tr key={concert.id} style={{
+                      borderBottom: idx < stats.concerts.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      transition: "background 0.15s",
+                    }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
-                      <td className="p-4 font-medium text-white">
-                        {concert.name}
-                      </td>
-                      <td className="p-4 text-gray-300">{concert.artist}</td>
-                      <td className="p-4 text-gray-300">{concert.venue}</td>
-                      <td className="p-4 text-right text-gray-300">
-                        {formatCurrency(concert.price)}
-                      </td>
-                      <td className="p-4 text-right">
-                        <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-medium">
+                      <td style={{ padding: "16px 20px", fontWeight: 600, color: "#fff" }}>{concert.name}</td>
+                      <td style={{ padding: "16px 20px", color: "#d1d5db" }}>{concert.artist}</td>
+                      <td style={{ padding: "16px 20px", color: "#d1d5db" }}>{concert.venue}</td>
+                      <td style={{ padding: "16px 20px", textAlign: "right", color: "#d1d5db" }}>{formatCurrency(concert.price)}</td>
+                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
+                        <span style={{
+                          display: "inline-block", padding: "4px 12px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+                          background: concert.tickets_sold > 0 ? "rgba(16,185,129,0.12)" : "rgba(156,163,175,0.1)",
+                          color: concert.tickets_sold > 0 ? "#34d399" : "#9ca3af",
+                        }}>
                           {concert.tickets_sold}
                         </span>
                       </td>
-                      <td className="p-4 text-right text-gray-300">
-                        {concert.available_tickets}/{concert.quota}
+                      <td style={{ padding: "16px 20px", textAlign: "right", color: "#9ca3af", fontSize: 13 }}>
+                        {concert.available_tickets} / {concert.quota}
                       </td>
                     </tr>
                   ))}
@@ -256,56 +199,48 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Recent Transactions */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl">
-          <div className="p-6 border-b border-gray-800">
-            <h2 className="text-lg font-semibold">Transaksi Terbaru</h2>
+        {/* ── Recent Transactions ── */}
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden" }}>
+          <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>💳 Transaksi Terbaru</h2>
           </div>
           {stats && stats.recent_transactions.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                 <thead>
-                  <tr className="text-gray-400 border-b border-gray-800">
-                    <th className="text-left p-4 font-medium">Pembeli</th>
-                    <th className="text-left p-4 font-medium">Konser</th>
-                    <th className="text-right p-4 font-medium">Jumlah</th>
-                    <th className="text-center p-4 font-medium">Status</th>
-                    <th className="text-right p-4 font-medium">Tanggal</th>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                    {["Pembeli", "Konser", "Jumlah", "Status", "Tanggal"].map((h, i) => (
+                      <th key={h} style={{
+                        padding: "14px 20px", fontWeight: 600, fontSize: 12,
+                        color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px",
+                        textAlign: i === 2 ? "right" : i === 3 ? "center" : i === 4 ? "right" : "left",
+                      }}>{h}</th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
                   {stats.recent_transactions.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                    <tr key={tx.id} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
-                      <td className="p-4">
-                        <p className="font-medium text-white">
-                          {tx.buyer_name}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {tx.buyer_email}
-                        </p>
+                      <td style={{ padding: "16px 20px" }}>
+                        <p style={{ fontWeight: 600, color: "#fff", margin: 0, fontSize: 14 }}>{tx.buyer_name}</p>
+                        <p style={{ color: "#6b7280", margin: "2px 0 0", fontSize: 12 }}>{tx.buyer_email}</p>
                       </td>
-                      <td className="p-4 text-gray-300">{tx.concert_name}</td>
-                      <td className="p-4 text-right text-gray-300">
-                        {formatCurrency(tx.amount)}
-                      </td>
-                      <td className="p-4 text-center">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            tx.status === "success"
-                              ? "bg-green-500/10 text-green-400"
-                              : tx.status === "pending"
-                              ? "bg-yellow-500/10 text-yellow-400"
-                              : "bg-red-500/10 text-red-400"
-                          }`}
-                        >
+                      <td style={{ padding: "16px 20px", color: "#d1d5db" }}>{tx.concert_name}</td>
+                      <td style={{ padding: "16px 20px", textAlign: "right", color: "#d1d5db" }}>{formatCurrency(tx.amount)}</td>
+                      <td style={{ padding: "16px 20px", textAlign: "center" }}>
+                        <span style={{
+                          display: "inline-block", padding: "4px 12px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+                          background: tx.status === "success" ? "rgba(16,185,129,0.12)" : tx.status === "pending" ? "rgba(245,158,11,0.12)" : "rgba(239,68,68,0.12)",
+                          color: tx.status === "success" ? "#34d399" : tx.status === "pending" ? "#fbbf24" : "#f87171",
+                        }}>
                           {tx.status}
                         </span>
                       </td>
-                      <td className="p-4 text-right text-gray-400 text-xs">
-                        {formatDate(tx.created_at)}
+                      <td style={{ padding: "16px 20px", textAlign: "right", color: "#6b7280", fontSize: 12 }}>
+                        {tx.created_at ? new Date(tx.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "-"}
                       </td>
                     </tr>
                   ))}
@@ -313,13 +248,22 @@ export default function AdminDashboardPage() {
               </table>
             </div>
           ) : (
-            <div className="p-12 text-center text-gray-500">
-              <p className="text-4xl mb-4">📋</p>
-              <p>Belum ada transaksi</p>
+            <div style={{ padding: "60px 24px", textAlign: "center" }}>
+              <p style={{ fontSize: 48, margin: "0 0 12px" }}>📋</p>
+              <p style={{ color: "#6b7280", fontSize: 15, margin: 0 }}>Belum ada transaksi</p>
             </div>
           )}
         </div>
       </main>
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 768px) {
+          div[style*="grid-template-columns: repeat(4"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+      `}</style>
     </div>
   );
 }
