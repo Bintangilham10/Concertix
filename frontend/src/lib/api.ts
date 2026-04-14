@@ -1,4 +1,4 @@
-import type { AuthResponse, User, AdminStats, AdminTransactionsResponse } from "@/types";
+import type { AuthResponse, User, AdminStats, AdminTransactionsResponse, AdminUsersResponse } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -134,4 +134,19 @@ export async function getAdminTransactions(
   if (status) params.set("status", status);
   if (search) params.set("search", search);
   return fetchApi<AdminTransactionsResponse>(`/admin/transactions?${params}`);
+}
+
+export async function getAdminUsers(
+  page = 1,
+  perPage = 20,
+  role?: string,
+  search?: string
+): Promise<AdminUsersResponse> {
+  const params = new URLSearchParams({
+    page: String(page),
+    per_page: String(perPage),
+  });
+  if (role) params.set("role", role);
+  if (search) params.set("search", search);
+  return fetchApi<AdminUsersResponse>(`/admin/users?${params}`);
 }

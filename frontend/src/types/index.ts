@@ -143,3 +143,20 @@ export interface AdminTransactionsResponse {
   per_page: number;
   total_pages: number;
 }
+
+export interface AdminUserItem {
+  id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  total_tickets: number;
+  total_spent: number;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUserItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
