@@ -144,3 +144,105 @@ async def get_admin_stats(
         concerts=concerts,
         recent_transactions=recent_transactions,
     )
+
+
+# ── Admin Transactions List ──────────────────────────────────────────────────
+
+class AdminTransactionItem(BaseModel):
+    id: str
+    ticket_id: str
+    amount: float
+    status: str
+    payment_type: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    buyer_name: Optional[str] = None
+    buyer_email: Optional[str] = None
+    concert_name: Optional[str] = None
+    concert_artist: Optional[str] = None
+    ticket_status: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+
+class AdminTransactionsResponse(BaseModel):
+    transactions: List[AdminTransactionItem]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
+@router.get("/transactions", response_model=AdminTransactionsResponse)
+async def get_admin_transactions(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    status_filter: Optional[str] = Query(None, alias="status"),
+    search: Optional[str] = Query(None),
+    admin: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    Get paginated list of all transactions (admin only).
+
+    Supports filtering by status and searching by buyer name/email.
+    """
+    # Base query with joins
+    base_query = (
+        db.query(Transaction, Ticket, User, Concert)
+        .join(Ticket, Transaction.ticket_id == Ticket.id)
+        .join(User, Ticket.user_id == User.id)
+        .join(Concert, Ticket.concert_id == Concert.id)
+    )
+
+    # Apply status filter
+    if status_filter:
+        base_query = base_query.filter(Transaction.status == status_filter)
+
+    # Apply search filter (buyer name or email)
+    if search:
+        search_pattern = f"%{search}%"
+        base_query = base_query.filter(
+            (User.full_name.ilike(search_pattern)) |
+            (User.email.ilike(search_pattern))
+        )
+
+    # Count total before pagination
+    total = base_query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    # Apply pagination
+    offset = (page - 1) * per_page
+    results = (
+        base_query
+        .order_by(Transaction.created_at.desc())
+        .offset(offset)
+        .limit(per_page)
+        .all()
+    )
+
+    transactions = []
+    for tx, ticket, user, concert in results:
+        transactions.append(AdminTransactionItem(
+            id=tx.id,
+            ticket_id=tx.ticket_id,
+            amount=tx.amount,
+            status=tx.status,
+            payment_type=tx.payment_type,
+            created_at=tx.created_at,
+            updated_at=tx.updated_at,
+            buyer_name=user.full_name,
+            buyer_email=user.email,
+            concert_name=concert.name,
+            concert_artist=concert.artist,
+            ticket_status=ticket.status,
+        ))
+
+    return AdminTransactionsResponse(
+        transactions=transactions,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )

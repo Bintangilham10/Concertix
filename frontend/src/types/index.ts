@@ -120,3 +120,26 @@ export interface AdminStats {
   concerts: ConcertStat[];
   recent_transactions: RecentTransaction[];
 }
+
+export interface AdminTransactionItem {
+  id: string;
+  ticket_id: string;
+  amount: number;
+  status: string;
+  payment_type: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  concert_name: string | null;
+  concert_artist: string | null;
+  ticket_status: string | null;
+}
+
+export interface AdminTransactionsResponse {
+  transactions: AdminTransactionItem[];
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
