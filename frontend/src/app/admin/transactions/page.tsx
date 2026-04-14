@@ -126,19 +126,31 @@ export default function AdminTransactionsPage() {
   };
 
   const statusBadge = (status: string) => {
-    const styles: Record<string, string> = {
-      success: "bg-green-500/10 text-green-400",
-      pending: "bg-yellow-500/10 text-yellow-400",
-      failed: "bg-red-500/10 text-red-400",
-      expired: "bg-gray-500/10 text-gray-400",
-      refunded: "bg-blue-500/10 text-blue-400",
-    };
+    let bg = "rgba(107,114,128,0.12)";
+    let color = "#9ca3af";
+    
+    if (status === "success") {
+      bg = "rgba(16,185,129,0.12)";
+      color = "#34d399";
+    } else if (status === "pending") {
+      bg = "rgba(245,158,11,0.12)";
+      color = "#fbbf24";
+    } else if (status === "failed") {
+      bg = "rgba(239,68,68,0.12)";
+      color = "#f87171";
+    } else if (status === "expired") {
+      bg = "rgba(107,114,128,0.12)";
+      color = "#9ca3af";
+    } else if (status === "refunded") {
+      bg = "rgba(59,130,246,0.12)";
+      color = "#60a5fa";
+    }
+
     return (
-      <span
-        className={`px-2 py-1 rounded-full text-xs font-medium ${
-          styles[status] || "bg-gray-500/10 text-gray-400"
-        }`}
-      >
+      <span style={{
+        display: "inline-block", padding: "4px 12px", borderRadius: 100, fontSize: 12, fontWeight: 600,
+        background: bg, color: color, textTransform: "capitalize", whiteSpace: "nowrap"
+      }}>
         {status}
       </span>
     );
@@ -146,187 +158,185 @@ export default function AdminTransactionsPage() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-400">Memverifikasi akses...</p>
+      <div style={{ minHeight: "100vh", background: "#0a0a1a", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, border: "3px solid #7c3aed", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+          <p style={{ color: "#9ca3af" }}>Memverifikasi akses...</p>
         </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      {/* Admin Header */}
-      <header className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent"
-            >
+    <div style={{ minHeight: "100vh", background: "#0a0a1a", color: "#fff", fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      {/* ── Header ── */}
+      <header style={{
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        background: "rgba(10,10,26,0.85)",
+        backdropFilter: "blur(20px)",
+        position: "sticky", top: 0, zIndex: 100,
+      }}>
+        <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Link href="/" style={{ fontSize: 20, fontWeight: 800, background: "linear-gradient(135deg, #a78bfa, #ec4899)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", textDecoration: "none" }}>
               Concertix
             </Link>
-            <span className="px-2 py-0.5 bg-purple-600/20 text-purple-300 text-xs font-medium rounded-full border border-purple-500/30">
+            <span style={{ padding: "2px 10px", background: "rgba(124,58,237,0.15)", color: "#c084fc", fontSize: 11, fontWeight: 600, borderRadius: 100, border: "1px solid rgba(124,58,237,0.3)" }}>
               Admin
             </span>
           </div>
-          <nav className="flex items-center gap-6 text-sm">
-            <a
-              href="/admin"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Dashboard
-            </a>
-            <a
-              href="/admin/concerts"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Konser
-            </a>
-            <a href="/admin/transactions" className="text-white font-medium">
-              Transaksi
-            </a>
-            <a
-              href="/admin/users"
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              Pengguna
-            </a>
+
+          <nav style={{ display: "flex", alignItems: "center", gap: 28 }}>
+            {[
+              { href: "/admin", label: "Dashboard", active: false },
+              { href: "/admin/concerts", label: "Konser", active: false },
+              { href: "/admin/transactions", label: "Transaksi", active: true },
+              { href: "/admin/users", label: "Pengguna", active: false },
+            ].map((item) => (
+              <a key={item.href} href={item.href} style={{
+                fontSize: 13, fontWeight: item.active ? 600 : 500, textDecoration: "none",
+                color: item.active ? "#fff" : "#9ca3af",
+                borderBottom: item.active ? "2px solid #7c3aed" : "2px solid transparent",
+                paddingBottom: 4,
+              }}>
+                {item.label}
+              </a>
+            ))}
           </nav>
-          <div className="flex items-center gap-4">
+
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             {user && (
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-white">
-                  {user.full_name}
-                </p>
-                <p className="text-xs text-gray-400">{user.email}</p>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "#fff", margin: 0 }}>{user.full_name}</p>
+                <p style={{ fontSize: 11, color: "#9ca3af", margin: 0 }}>{user.email}</p>
               </div>
             )}
-            <button
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="px-4 py-2 text-sm font-medium text-red-400 border border-red-500/30 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50"
-            >
+            <button onClick={handleLogout} disabled={loggingOut} style={{
+              padding: "8px 16px", fontSize: 13, fontWeight: 600, color: "#f87171",
+              background: "transparent", border: "1px solid rgba(248,113,113,0.3)",
+              borderRadius: 8, cursor: "pointer", transition: "all 0.2s",
+            }}>
               {loggingOut ? "Keluar..." : "Logout"}
             </button>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Transaksi</h1>
-            <p className="text-gray-400 mt-1">
-              {total} transaksi ditemukan
-            </p>
-          </div>
+      {/* ── Content ── */}
+      <main style={{ maxWidth: 1280, margin: "0 auto", padding: "40px 24px" }}>
+        {/* Title */}
+        <div style={{ marginBottom: 32 }}>
+          <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Manajemen Transaksi</h1>
+          <p style={{ color: "#9ca3af", marginTop: 6, fontSize: 15 }}>{total} transaksi ditemukan dan tercatat dalam sistem</p>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          {/* Search */}
-          <form onSubmit={handleSearch} className="flex-1">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                placeholder="Cari nama atau email pembeli..."
-                className="flex-1 bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-purple-500 transition-colors"
-              />
-              <button
-                type="submit"
-                className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white text-sm font-medium rounded-lg transition-colors"
-              >
-                Cari
-              </button>
-            </div>
+        {/* Actions bar */}
+        <div style={{ display: "flex", gap: "16px", marginBottom: "32px", flexWrap: "wrap", alignItems: "center" }}>
+          {/* Search Form */}
+          <form onSubmit={handleSearch} style={{ display: "flex", flex: 1, position: "relative", minWidth: 300 }}>
+            <span style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", fontSize: 16 }}>
+              🔍
+            </span>
+            <input 
+              type="text" 
+              value={searchInput} 
+              onChange={(e) => setSearchInput(e.target.value)} 
+              placeholder="Cari nama atau email pembeli..."
+              style={{
+                width: "100%", padding: "14px 16px 14px 44px", borderRadius: 12,
+                border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
+                color: "#fff", fontSize: 14, outline: "none", transition: "all 0.2s"
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#a78bfa"; e.currentTarget.style.background = "rgba(255,255,255,0.05)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
+            />
+            <button type="submit" style={{ display: "none" }}>Submit</button>
           </form>
 
           {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => handleStatusChange(e.target.value)}
-            className="bg-gray-900 border border-gray-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-purple-500 transition-colors"
-          >
-            {STATUS_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+          <div style={{ position: "relative" }}>
+            <select
+              value={statusFilter}
+              onChange={(e) => handleStatusChange(e.target.value)}
+              style={{
+                padding: "14px 40px 14px 20px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)",
+                background: "rgba(255,255,255,0.03)", color: "#fff", fontSize: 14, outline: "none", minWidth: "200px",
+                cursor: "pointer", appearance: "none", transition: "all 0.2s"
+              }}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#a78bfa"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value} style={{ background: "#0a0a1a", color: "#fff", padding: "10px" }}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <span style={{ position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none", fontSize: 12 }}>
+              ▼
+            </span>
+          </div>
         </div>
 
-        {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm">
+          <div style={{ marginBottom: 24, padding: 16, background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)", borderRadius: 12, color: "#fca5a5", fontSize: 14 }}>
             ⚠️ {error}
           </div>
         )}
 
-        {/* Table */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl">
+        {/* Transaction Table section */}
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 16, overflow: "hidden", minHeight: 400 }}>
           {loading ? (
-            <div className="p-12 text-center">
-              <div className="inline-block w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mb-4" />
-              <p className="text-gray-400">Memuat transaksi...</p>
+            <div style={{ padding: "80px 24px", textAlign: "center" }}>
+              <div style={{ width: 40, height: 40, border: "3px solid #7c3aed", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 1s linear infinite", margin: "0 auto 16px" }} />
+              <p style={{ color: "#9ca3af", marginTop: 16 }}>Memuat transaksi...</p>
             </div>
           ) : transactions.length === 0 ? (
-            <div className="p-12 text-center text-gray-500">
-              <p className="text-4xl mb-4">📋</p>
-              <p>Tidak ada transaksi ditemukan</p>
+            <div style={{ padding: "80px 24px", textAlign: "center" }}>
+              <p style={{ fontSize: 48, margin: "0 0 16px", opacity: 0.5 }}>📋</p>
+              <p style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>Tidak ada transaksi ditemukan</p>
+              <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>Ubah kata kunci pencarian atau filter status transaksi.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div style={{ overflowX: "auto" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>
                 <thead>
-                  <tr className="text-gray-400 border-b border-gray-800">
-                    <th className="text-left p-4 font-medium">Pembeli</th>
-                    <th className="text-left p-4 font-medium">Konser</th>
-                    <th className="text-right p-4 font-medium">Jumlah</th>
-                    <th className="text-center p-4 font-medium">Status Bayar</th>
-                    <th className="text-center p-4 font-medium">Status Tiket</th>
-                    <th className="text-left p-4 font-medium">Metode</th>
-                    <th className="text-right p-4 font-medium">Tanggal</th>
+                  <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
+                    <th style={{ padding: "16px 24px", fontWeight: 600, fontSize: 12, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "left" }}>ID & Tanggal</th>
+                    <th style={{ padding: "16px 24px", fontWeight: 600, fontSize: 12, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "left" }}>Pembeli</th>
+                    <th style={{ padding: "16px 24px", fontWeight: 600, fontSize: 12, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "left" }}>Konser</th>
+                    <th style={{ padding: "16px 24px", fontWeight: 600, fontSize: 12, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "right" }}>Jumlah & Metode</th>
+                    <th style={{ padding: "16px 24px", fontWeight: 600, fontSize: 12, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.5px", textAlign: "center" }}>Status Bayar</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {transactions.map((tx) => (
-                    <tr
-                      key={tx.id}
-                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                  {transactions.map((tx, idx) => (
+                    <tr key={tx.id} style={{
+                      borderBottom: idx < transactions.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                      transition: "background 0.15s",
+                    }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.03)"}
+                      onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
                     >
-                      <td className="p-4">
-                        <p className="font-medium text-white">
-                          {tx.buyer_name}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {tx.buyer_email}
-                        </p>
+                      <td style={{ padding: "16px 24px", whiteSpace: "nowrap" }}>
+                         <p style={{ color: "#9ca3af", fontSize: 12, margin: "0 0 4px", fontFamily: "monospace" }}>#{tx.id.substring(0, 8)}</p>
+                         <p style={{ color: "#d1d5db", margin: 0, fontSize: 13 }}>{formatDate(tx.created_at)}</p>
                       </td>
-                      <td className="p-4">
-                        <p className="text-gray-300">{tx.concert_name}</p>
-                        <p className="text-xs text-gray-500">
-                          {tx.concert_artist}
-                        </p>
+                      <td style={{ padding: "16px 24px" }}>
+                        <p style={{ fontWeight: 600, color: "#fff", margin: "0 0 4px", fontSize: 14 }}>{tx.buyer_name}</p>
+                        <p style={{ color: "#9ca3af", fontSize: 12, margin: 0 }}>{tx.buyer_email}</p>
                       </td>
-                      <td className="p-4 text-right text-gray-300">
-                        {formatCurrency(tx.amount)}
+                      <td style={{ padding: "16px 24px" }}>
+                        <p style={{ fontWeight: 500, color: "#d1d5db", margin: "0 0 4px" }}>{tx.concert_name}</p>
+                        <p style={{ color: "#6b7280", fontSize: 12, margin: 0 }}>🎤 {tx.concert_artist}</p>
                       </td>
-                      <td className="p-4 text-center">
+                      <td style={{ padding: "16px 24px", textAlign: "right", whiteSpace: "nowrap" }}>
+                        <p style={{ fontWeight: 600, color: "#c084fc", margin: "0 0 4px" }}>{formatCurrency(tx.amount)}</p>
+                        <p style={{ color: "#6b7280", fontSize: 12, margin: 0, textTransform: "uppercase" }}>{tx.payment_type || "N/A"}</p>
+                      </td>
+                      <td style={{ padding: "16px 24px", textAlign: "center" }}>
                         {statusBadge(tx.status)}
-                      </td>
-                      <td className="p-4 text-center">
-                        {tx.ticket_status && statusBadge(tx.ticket_status)}
-                      </td>
-                      <td className="p-4 text-gray-400 text-xs">
-                        {tx.payment_type || "-"}
-                      </td>
-                      <td className="p-4 text-right text-gray-400 text-xs">
-                        {formatDate(tx.created_at)}
                       </td>
                     </tr>
                   ))}
@@ -337,30 +347,43 @@ export default function AdminTransactionsPage() {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between p-4 border-t border-gray-800">
-              <p className="text-sm text-gray-400">
-                Halaman {page} dari {totalPages}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px", borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.01)" }}>
+              <p style={{ fontSize: 13, color: "#9ca3af", margin: 0 }}>Halaman <span style={{ color: "#fff", fontWeight: 600 }}>{page}</span> dari {totalPages}</p>
+              <div style={{ display: "flex", gap: 8 }}>
+                <button 
+                  onClick={() => setPage((p) => Math.max(1, p - 1))} 
                   disabled={page <= 1}
-                  className="px-3 py-1.5 text-sm bg-gray-800 rounded-lg hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  style={{
+                    padding: "8px 16px", fontSize: 13, fontWeight: 500, color: "#fff",
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+                    cursor: page <= 1 ? "not-allowed" : "pointer", opacity: page <= 1 ? 0.5 : 1, transition: "background 0.2s"
+                  }}
+                  onMouseEnter={(e) => { if (page > 1) e.currentTarget.style.background = "rgba(255,255,255,0.1)" }}
+                  onMouseLeave={(e) => { if (page > 1) e.currentTarget.style.background = "rgba(255,255,255,0.05)" }}
                 >
-                  ← Prev
+                  ← Sebelumnya
                 </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                <button 
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))} 
                   disabled={page >= totalPages}
-                  className="px-3 py-1.5 text-sm bg-gray-800 rounded-lg hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  style={{
+                    padding: "8px 16px", fontSize: 13, fontWeight: 500, color: "#fff",
+                    background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8,
+                    cursor: page >= totalPages ? "not-allowed" : "pointer", opacity: page >= totalPages ? 0.5 : 1, transition: "background 0.2s"
+                  }}
+                  onMouseEnter={(e) => { if (page < totalPages) e.currentTarget.style.background = "rgba(255,255,255,0.1)" }}
+                  onMouseLeave={(e) => { if (page < totalPages) e.currentTarget.style.background = "rgba(255,255,255,0.05)" }}
                 >
-                  Next →
+                  Selanjutnya →
                 </button>
               </div>
             </div>
           )}
         </div>
       </main>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
     </div>
   );
 }
