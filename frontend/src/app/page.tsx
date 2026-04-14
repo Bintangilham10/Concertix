@@ -161,6 +161,7 @@ export default function Home() {
   // Form state
   const [buyerName, setBuyerName] = useState("");
   const [buyerEmail, setBuyerEmail] = useState("");
+  const [phoneCode, setPhoneCode] = useState("+62");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [nameError, setNameError] = useState(false);
   const [emailError, setEmailError] = useState(false);
@@ -1183,7 +1184,7 @@ export default function Home() {
               <div className="st-left">
                 <small>Kategori Tiket</small>
                 <strong id="modal-type">{modalType} Access</strong>
-                <em>Lapangan Gasibu · 17 Agustus 2026</em>
+                <em>Lapangan Gasibu · 2026</em>
               </div>
               <div className="st-right">
                 <small>Harga / tiket</small>
@@ -1268,21 +1269,63 @@ export default function Home() {
               <label className="form-label" htmlFor="buyer-phone">
                 No. WhatsApp
               </label>
-              <input
-                className={`form-input${phoneError ? " error" : ""}`}
-                type="tel"
-                id="buyer-phone"
-                placeholder="+62 8xx xxxx xxxx"
-                autoComplete="tel"
-                aria-required="true"
-                value={buyerPhone}
-                onChange={(e) => {
-                  setBuyerPhone(e.target.value);
-                  setPhoneError(false);
-                }}
-              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ position: "relative", width: "110px", flexShrink: 0 }}>
+                  <select
+                    className="form-input"
+                    value={phoneCode}
+                    onChange={(e) => setPhoneCode(e.target.value)}
+                    style={{
+                      paddingRight: "28px",
+                      appearance: "none",
+                      cursor: "pointer",
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      color: "#e5e7eb",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      display: "block",
+                      width: "100%",
+                    }}
+                    aria-label="Kode Negara"
+                  >
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+62">🇮🇩 +62</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+60">🇲🇾 +60</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+65">🇸🇬 +65</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+66">🇹🇭 +66</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+1">🇺🇸 +1</option>
+                  </select>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
+                      color: "#9ca3af",
+                      fontSize: "12px",
+                    }}
+                  >
+                    ▼
+                  </div>
+                </div>
+                <input
+                  className={`form-input${phoneError ? " error" : ""}`}
+                  type="tel"
+                  id="buyer-phone"
+                  placeholder="8xx xxxx xxxx"
+                  autoComplete="tel-national"
+                  aria-required="true"
+                  value={buyerPhone}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    const cleanVal = val.startsWith("0") ? val.substring(1) : val;
+                    setBuyerPhone(cleanVal);
+                    setPhoneError(false);
+                  }}
+                  style={{ flex: 1, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)" }}
+                />
+              </div>
               <div className="error-msg" id="err-phone">
-                Nomor WhatsApp wajib diisi
+                Nomor WhatsApp wajib diisi (minimal 8 angka)
               </div>
             </div>
             <div
