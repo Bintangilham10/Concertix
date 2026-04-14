@@ -55,7 +55,6 @@ async def register(user_data: UserCreate, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")  # T4 Mitigation: Rate limiting to prevent brute-force
 async def login(request: Request, credentials: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT tokens."""
     user = db.query(User).filter(User.email == credentials.email).first()
