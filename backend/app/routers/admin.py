@@ -246,3 +246,91 @@ async def get_admin_transactions(
         per_page=per_page,
         total_pages=total_pages,
     )
+
+
+# ── Admin Users List ─────────────────────────────────────────────────────────
+
+class AdminUserItem(BaseModel):
+    id: str
+    email: str
+    full_name: str
+    role: str
+    total_tickets: int = 0
+    total_spent: float = 0.0
+
+    class Config:
+        from_attributes = True
+
+
+class AdminUsersResponse(BaseModel):
+    users: List[AdminUserItem]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
+
+
+@router.get("/users", response_model=AdminUsersResponse)
+async def get_admin_users(
+    page: int = Query(1, ge=1),
+    per_page: int = Query(20, ge=1, le=100),
+    role: Optional[str] = Query(None),
+    search: Optional[str] = Query(None),
+    admin: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    """
+    Get paginated list of all users (admin only).
+
+    Supports filtering by role and searching by name/email.
+    """
+    base_query = db.query(User)
+
+    if role:
+        base_query = base_query.filter(User.role == role)
+
+    if search:
+        search_pattern = f"%{search}%"
+        base_query = base_query.filter(
+            (User.full_name.ilike(search_pattern)) |
+            (User.email.ilike(search_pattern))
+        )
+
+    total = base_query.count()
+    total_pages = max(1, (total + per_page - 1) // per_page)
+
+    offset = (page - 1) * per_page
+    users_raw = base_query.order_by(User.email.asc()).offset(offset).limit(per_page).all()
+
+    users = []
+    for u in users_raw:
+        # Count tickets and total spent per user
+        ticket_count = (
+            db.query(func.count(Ticket.id))
+            .filter(Ticket.user_id == u.id)
+            .scalar()
+        ) or 0
+
+        total_spent = (
+            db.query(func.coalesce(func.sum(Transaction.amount), 0.0))
+            .join(Ticket, Transaction.ticket_id == Ticket.id)
+            .filter(Ticket.user_id == u.id, Transaction.status == "success")
+            .scalar()
+        ) or 0.0
+
+        users.append(AdminUserItem(
+            id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            role=u.role,
+            total_tickets=ticket_count,
+            total_spent=total_spent,
+        ))
+
+    return AdminUsersResponse(
+        users=users,
+        total=total,
+        page=page,
+        per_page=per_page,
+        total_pages=total_pages,
+    )
