@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import auth, concerts, tickets, payments
+from app.routers import auth, concerts, tickets, payments, admin
 from app.middleware.rate_limiter import setup_rate_limiter
 
 settings = get_settings()
@@ -52,6 +52,7 @@ app.include_router(auth.router, prefix="/auth", tags=["Authentication"])
 app.include_router(concerts.router, prefix="/concerts", tags=["Concerts"])
 app.include_router(tickets.router, prefix="/tickets", tags=["Tickets"])
 app.include_router(payments.router, prefix="/payments", tags=["Payments"])
+app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 
 # Blockchain router (Week 3) — registered dynamically if available
 try:
