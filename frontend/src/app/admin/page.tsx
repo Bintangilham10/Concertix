@@ -4,13 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
-import type { User } from "@/types";
+import { getAdminStats } from "@/lib/api";
+import type { User, AdminStats } from "@/types";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
+  const [stats, setStats] = useState<AdminStats | null>(null);
   const [checking, setChecking] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -29,6 +32,16 @@ export default function AdminDashboardPage() {
 
         setUser(currentUser);
         setChecking(false);
+
+        // Fetch dashboard stats
+        try {
+          const data = await getAdminStats();
+          setStats(data);
+        } catch (err) {
+          setStatsError(
+            err instanceof Error ? err.message : "Gagal memuat statistik"
+          );
+        }
       } catch {
         router.replace("/login");
       }
@@ -46,6 +59,25 @@ export default function AdminDashboardPage() {
       clearCache();
     }
     router.replace("/login");
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateStr: string | null) => {
+    if (!dateStr) return "-";
+    return new Date(dateStr).toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   // Show loading state while checking auth
@@ -126,13 +158,36 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Stats Error */}
+        {statsError && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-red-300 text-sm">
+            ⚠️ {statsError}
+          </div>
+        )}
+
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {[
-            { label: "Total Konser", value: "0", icon: "🎵" },
-            { label: "Tiket Terjual", value: "0", icon: "🎫" },
-            { label: "Pendapatan", value: "Rp 0", icon: "💰" },
-            { label: "Pengguna", value: "0", icon: "👥" },
+            {
+              label: "Total Konser",
+              value: stats ? String(stats.total_concerts) : "—",
+              icon: "🎵",
+            },
+            {
+              label: "Tiket Terjual",
+              value: stats ? String(stats.total_tickets_sold) : "—",
+              icon: "🎫",
+            },
+            {
+              label: "Pendapatan",
+              value: stats ? formatCurrency(stats.total_revenue) : "—",
+              icon: "💰",
+            },
+            {
+              label: "Pengguna",
+              value: stats ? String(stats.total_users) : "—",
+              icon: "👥",
+            },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -147,15 +202,116 @@ export default function AdminDashboardPage() {
           ))}
         </div>
 
-        {/* Placeholder Table */}
+        {/* Concert List */}
+        {stats && stats.concerts.length > 0 && (
+          <div className="bg-gray-900 border border-gray-800 rounded-xl mb-8">
+            <div className="p-6 border-b border-gray-800">
+              <h2 className="text-lg font-semibold">Daftar Konser</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-gray-400 border-b border-gray-800">
+                    <th className="text-left p-4 font-medium">Nama</th>
+                    <th className="text-left p-4 font-medium">Artis</th>
+                    <th className="text-left p-4 font-medium">Venue</th>
+                    <th className="text-right p-4 font-medium">Harga</th>
+                    <th className="text-right p-4 font-medium">Terjual</th>
+                    <th className="text-right p-4 font-medium">Sisa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.concerts.map((concert) => (
+                    <tr
+                      key={concert.id}
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                    >
+                      <td className="p-4 font-medium text-white">
+                        {concert.name}
+                      </td>
+                      <td className="p-4 text-gray-300">{concert.artist}</td>
+                      <td className="p-4 text-gray-300">{concert.venue}</td>
+                      <td className="p-4 text-right text-gray-300">
+                        {formatCurrency(concert.price)}
+                      </td>
+                      <td className="p-4 text-right">
+                        <span className="px-2 py-1 bg-green-500/10 text-green-400 rounded-full text-xs font-medium">
+                          {concert.tickets_sold}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right text-gray-300">
+                        {concert.available_tickets}/{concert.quota}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Transactions */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl">
           <div className="p-6 border-b border-gray-800">
             <h2 className="text-lg font-semibold">Transaksi Terbaru</h2>
           </div>
-          <div className="p-12 text-center text-gray-500">
-            <p className="text-4xl mb-4">📋</p>
-            <p>Belum ada transaksi</p>
-          </div>
+          {stats && stats.recent_transactions.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-gray-400 border-b border-gray-800">
+                    <th className="text-left p-4 font-medium">Pembeli</th>
+                    <th className="text-left p-4 font-medium">Konser</th>
+                    <th className="text-right p-4 font-medium">Jumlah</th>
+                    <th className="text-center p-4 font-medium">Status</th>
+                    <th className="text-right p-4 font-medium">Tanggal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.recent_transactions.map((tx) => (
+                    <tr
+                      key={tx.id}
+                      className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors"
+                    >
+                      <td className="p-4">
+                        <p className="font-medium text-white">
+                          {tx.buyer_name}
+                        </p>
+                        <p className="text-xs text-gray-400">
+                          {tx.buyer_email}
+                        </p>
+                      </td>
+                      <td className="p-4 text-gray-300">{tx.concert_name}</td>
+                      <td className="p-4 text-right text-gray-300">
+                        {formatCurrency(tx.amount)}
+                      </td>
+                      <td className="p-4 text-center">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            tx.status === "success"
+                              ? "bg-green-500/10 text-green-400"
+                              : tx.status === "pending"
+                              ? "bg-yellow-500/10 text-yellow-400"
+                              : "bg-red-500/10 text-red-400"
+                          }`}
+                        >
+                          {tx.status}
+                        </span>
+                      </td>
+                      <td className="p-4 text-right text-gray-400 text-xs">
+                        {formatDate(tx.created_at)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-gray-500">
+              <p className="text-4xl mb-4">📋</p>
+              <p>Belum ada transaksi</p>
+            </div>
+          )}
         </div>
       </main>
     </div>

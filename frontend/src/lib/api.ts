@@ -1,4 +1,4 @@
-import type { AuthResponse, User } from "@/types";
+import type { AuthResponse, User, AdminStats } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -113,4 +113,10 @@ export async function createPayment(ticketId: string) {
     method: "POST",
     body: JSON.stringify({ ticket_id: ticketId }),
   });
+}
+
+// ── Admin API ──
+
+export async function getAdminStats(): Promise<AdminStats> {
+  return fetchApi<AdminStats>("/admin/stats");
 }

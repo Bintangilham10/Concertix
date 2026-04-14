@@ -85,3 +85,38 @@ export interface PaginatedResponse<T> {
   per_page: number;
   total_pages: number;
 }
+
+// ── Admin Dashboard Types ──
+
+export interface ConcertStat {
+  id: string;
+  name: string;
+  artist: string;
+  venue: string;
+  date: string;
+  price: number;
+  quota: number;
+  available_tickets: number;
+  tickets_sold: number;
+}
+
+export interface RecentTransaction {
+  id: string;
+  ticket_id: string;
+  amount: number;
+  status: string;
+  payment_type: string | null;
+  created_at: string | null;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  concert_name: string | null;
+}
+
+export interface AdminStats {
+  total_concerts: number;
+  total_tickets_sold: number;
+  total_revenue: number;
+  total_users: number;
+  concerts: ConcertStat[];
+  recent_transactions: RecentTransaction[];
+}
