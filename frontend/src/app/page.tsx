@@ -451,12 +451,35 @@ export default function Home() {
           FAQ
         </a>
         <div className="nav-drawer-actions">
-          <a href="/login" className="btn-ghost" onClick={closeDrawer}>
-            Masuk
-          </a>
-          <a href="/register" className="btn-primary" onClick={closeDrawer}>
-            Daftar
-          </a>
+          {!authChecking && currentUser ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
+              <span style={{ color: "#fff", fontSize: "16px", fontWeight: 600 }}>
+                Hi, {currentUser.full_name}
+              </span>
+              <button
+                onClick={() => {
+                  handleLogout();
+                  closeDrawer();
+                }}
+                className="btn-ghost"
+                aria-label="Logout"
+                style={{ width: "100%", cursor: "pointer", fontFamily: "inherit" }}
+              >
+                Logout
+              </button>
+            </div>
+          ) : (
+            !authChecking && (
+              <>
+                <a href="/login" className="btn-ghost" onClick={closeDrawer}>
+                  Masuk
+                </a>
+                <a href="/register" className="btn-primary" onClick={closeDrawer}>
+                  Daftar
+                </a>
+              </>
+            )
+          )}
         </div>
       </div>
 
