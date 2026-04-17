@@ -115,6 +115,7 @@ nav {
 
 .nav-links {
   display: none;
+  justify-content: center;
   gap: 24px;
   list-style: none;
   flex: 1;
