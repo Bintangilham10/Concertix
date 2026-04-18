@@ -73,18 +73,6 @@ export default function MyTicketsPage() {
 
   return (
     <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #0a0a1a 0%, #1a1033 100%)" }}>
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/10 backdrop-blur-md" style={{ background: "rgba(10,10,26,0.85)" }}>
-        <div className="max-w-[1100px] mx-auto px-5 py-4 flex items-center justify-between">
-          <a href="/" className="text-xl font-extrabold bg-gradient-to-br from-[#a78bfa] to-[#ec4899] bg-clip-text text-transparent no-underline">
-            Concertix
-          </a>
-          <a href="/" className="text-[#a78bfa] text-xs sm:text-sm font-medium no-underline hover:opacity-80">
-            ← <span className="hidden sm:inline">Kembali ke Beranda</span><span className="inline sm:hidden">Kembali</span>
-          </a>
-        </div>
-      </header>
-
       {/* Content */}
       <main className="max-w-[1100px] mx-auto px-5 py-8 sm:py-10">
         <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 bg-gradient-to-br from-white to-[#a78bfa] bg-clip-text text-transparent">
@@ -113,7 +101,7 @@ export default function MyTicketsPage() {
             <div className="text-5xl mb-4">🎟</div>
             <h3 className="text-xl mb-2">Belum Ada Tiket</h3>
             <p className="text-[#9ca3af] mb-6">Kamu belum membeli tiket konser apapun.</p>
-            <a href="/#tickets" className="inline-block px-7 py-3 bg-gradient-to-br from-[#7c3aed] to-[#a855f7] rounded-xl text-white font-semibold text-sm hover:scale-105 transition-transform">
+            <a href="/dashboard" className="inline-block px-7 py-3 bg-gradient-to-br from-[#7c3aed] to-[#a855f7] rounded-xl text-white font-semibold text-sm hover:scale-105 transition-transform">
               Beli Tiket Sekarang →
             </a>
           </div>
