@@ -145,7 +145,7 @@ export default function DashboardTickets() {
   };
 
   return (
-    <div>
+    <>
       <div style={{ marginBottom: 32 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Pembelian Tiket</h1>
         <p style={{ color: "#9ca3af", marginTop: 6, fontSize: 15 }}>
@@ -153,121 +153,484 @@ export default function DashboardTickets() {
         </p>
       </div>
 
-      <div className="tickets-grid" style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
-        {/* VIP Ticket */}
-        <article className="ticket-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, position: "relative" }}>
-          <div className="ticket-top" style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-            <span className="ticket-category-badge" style={{ background: "rgba(234, 179, 8, 0.2)", color: "#fef08a", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>⭐ VIP</span>
-            <span className="avail-badge" style={{ color: "#ef4444", fontSize: 12, fontWeight: 600 }}>Limited Seats</span>
+      <div className="tickets-grid" role="list" style={{ marginTop: 24 }}>
+        {/* VIP TICKET */}
+        <article
+          className="ticket-card tc-vip"
+          role="listitem"
+          tabIndex={0}
+          aria-label="Tiket VIP, harga Rp 1.000, 1.000 tiket tersedia"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openModal("VIP", "Rp 1.000", 1000);
+            }
+          }}
+        >
+          <div className="ticket-glow" aria-hidden="true"></div>
+          <div className="ticket-shine" aria-hidden="true"></div>
+          <div className="ticket-inner">
+            <div className="ticket-top">
+              <span className="ticket-category-badge">⭐ VIP</span>
+              <span className="avail-badge avail-limited">
+                <span className="avail-dot" aria-hidden="true"></span>
+                Limited Seats
+              </span>
+            </div>
+            <div className="ticket-type">VIP ACCESS</div>
+            <div className="ticket-location">
+              Lapangan Gasibu · Zona Eksklusif Depan Panggung
+            </div>
+            <div className="perf-divider" aria-hidden="true">
+              <div className="perf-notch"></div>
+              <div className="perf-line"></div>
+              <div className="perf-notch"></div>
+            </div>
+            <div className="ticket-price">
+              Rp 1.000<sub>/tiket</sub>
+            </div>
+            <div className="progress-wrap">
+              <div className="progress-labels">
+                <span>
+                  Tiket Terjual: <strong>0</strong>
+                </span>
+                <span>0%</span>
+              </div>
+              <div
+                className="progress-track"
+                role="progressbar"
+                aria-valuenow={0}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="0% tiket VIP terjual"
+              >
+                <div
+                  className="progress-fill"
+                  style={{ width: "0%" }}
+                ></div>
+              </div>
+              <div className="ticket-count" aria-live="polite">
+                1.000 tiket tersedia <span>dari 1.000</span>
+              </div>
+            </div>
+            <ul
+              className="benefits-list"
+              aria-label="Keuntungan tiket VIP"
+            >
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Front Zone Access
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Meet &amp; Greet dengan Artis
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Exclusive Merchandise
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Early Entry
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                VIP Lounge Access
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Priority Parking
+              </li>
+            </ul>
+            <button
+              className="ticket-btn"
+              onClick={() => openModal("VIP", "Rp 1.000", 1000)}
+              aria-label="Beli tiket VIP seharga Rp 1.000"
+            >
+              Beli Tiket VIP →
+            </button>
           </div>
-          <div className="ticket-type" style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>VIP ACCESS</div>
-          <div className="ticket-location" style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>Lapangan Gasibu · Zona Eksklusif Depan Panggung</div>
-          <div className="ticket-price" style={{ fontSize: 24, fontWeight: 800, color: "#eab308", marginBottom: 24 }}>Rp 1.000<sub style={{ fontSize: 12, color: "#9ca3af", fontWeight: 400 }}>/tiket</sub></div>
-          <ul className="benefits-list" style={{ listStyle: "none", padding: 0, margin: "0 0 24px", color: "#d1d5db", fontSize: 14 }}>
-            <li style={{ marginBottom: 8 }}>✨ Front Zone Access</li>
-            <li style={{ marginBottom: 8 }}>✨ Meet & Greet dengan Artis</li>
-            <li style={{ marginBottom: 8 }}>✨ Exclusive Merchandise</li>
-            <li style={{ marginBottom: 8 }}>✨ Early Entry</li>
-            <li style={{ marginBottom: 8 }}>✨ VIP Lounge Access</li>
-            <li style={{ marginBottom: 8 }}>✨ Priority Parking</li>
-          </ul>
-          <button className="btn-primary" onClick={() => openModal("VIP", "Rp 1.000", 1000)} style={{ width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg, #eab308, #ca8a04)", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
-            Beli Tiket VIP →
-          </button>
         </article>
 
-        {/* Regular Ticket */}
-        <article className="ticket-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, position: "relative" }}>
-          <div className="ticket-top" style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
-            <span className="ticket-category-badge" style={{ background: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>🎟 Regular</span>
-            <span className="avail-badge" style={{ color: "#10b981", fontSize: 12, fontWeight: 600 }}>Available</span>
+        {/* REGULAR TICKET */}
+        <article
+          className="ticket-card tc-regular"
+          role="listitem"
+          tabIndex={0}
+          aria-label="Tiket Regular, harga Rp 500, 3.000 tiket tersedia"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              openModal("Regular", "Rp 500", 500);
+            }
+          }}
+        >
+          <div className="ticket-glow" aria-hidden="true"></div>
+          <div className="ticket-shine" aria-hidden="true"></div>
+          <div className="ticket-inner">
+            <div className="ticket-top">
+              <span className="ticket-category-badge">🎟 Regular</span>
+              <span className="avail-badge avail-ok">
+                <span className="avail-dot" aria-hidden="true"></span>
+                Available
+              </span>
+            </div>
+            <div className="ticket-type">REGULAR ENTRY</div>
+            <div className="ticket-location">
+              Lapangan Gasibu · Zona Festival Luas
+            </div>
+            <div className="perf-divider" aria-hidden="true">
+              <div className="perf-notch"></div>
+              <div className="perf-line"></div>
+              <div className="perf-notch"></div>
+            </div>
+            <div className="ticket-price">
+              Rp 500<sub>/tiket</sub>
+            </div>
+            <div className="progress-wrap">
+              <div className="progress-labels">
+                <span>
+                  Tiket Terjual: <strong>0</strong>
+                </span>
+                <span>0%</span>
+              </div>
+              <div
+                className="progress-track"
+                role="progressbar"
+                aria-valuenow={0}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="0% tiket Regular terjual"
+              >
+                <div
+                  className="progress-fill"
+                  style={{ width: "0%" }}
+                ></div>
+              </div>
+              <div className="ticket-count" aria-live="polite">
+                3.000 tiket tersedia <span>dari 3.000</span>
+              </div>
+            </div>
+            <ul
+              className="benefits-list"
+              aria-label="Keuntungan tiket Regular"
+            >
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                General Admission
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Merchandise
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Free Parking
+              </li>
+              <li>
+                <span className="benefit-icon" aria-hidden="true"></span>
+                Access to Food Court
+              </li>
+            </ul>
+            <button
+              className="ticket-btn"
+              onClick={() => openModal("Regular", "Rp 500", 500)}
+              aria-label="Beli tiket Regular seharga Rp 500"
+            >
+              Beli Tiket Regular →
+            </button>
           </div>
-          <div className="ticket-type" style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>REGULAR ENTRY</div>
-          <div className="ticket-location" style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>Lapangan Gasibu · Zona Festival Luas</div>
-          <div className="ticket-price" style={{ fontSize: 24, fontWeight: 800, color: "#3b82f6", marginBottom: 24 }}>Rp 500<sub style={{ fontSize: 12, color: "#9ca3af", fontWeight: 400 }}>/tiket</sub></div>
-          <ul className="benefits-list" style={{ listStyle: "none", padding: 0, margin: "0 0 24px", color: "#d1d5db", fontSize: 14 }}>
-            <li style={{ marginBottom: 8 }}>✨ General Admission</li>
-            <li style={{ marginBottom: 8 }}>✨ Merchandise</li>
-            <li style={{ marginBottom: 8 }}>✨ Free Parking</li>
-            <li style={{ marginBottom: 8 }}>✨ Access to Food Court</li>
-          </ul>
-          <button className="btn-primary" onClick={() => openModal("Regular", "Rp 500", 500)} style={{ width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg, #3b82f6, #2563eb)", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer", marginTop: "auto" }}>
-            Beli Tiket Regular →
-          </button>
         </article>
       </div>
 
-      {modalOpen && (
-        <div className="modal-overlay" style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)", zIndex: 999, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
-          <div className="modal-content" style={{ background: "#1a1a2e", borderRadius: 20, width: "100%", maxWidth: 500, overflow: "hidden", border: "1px solid rgba(255,255,255,0.1)", position: "relative" }}>
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700 }}>Detail Pemesanan</h3>
-              <button aria-label="Tutup form pemesanan" onClick={closeModal} style={{ background: "none", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 24, padding: 0, lineHeight: 1 }}>&times;</button>
-            </div>
-            <div style={{ padding: 24 }}>
-              <div style={{ background: "rgba(255,255,255,0.02)", padding: 16, borderRadius: 12, marginBottom: 24, border: "1px solid rgba(255,255,255,0.05)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ color: "#9ca3af", fontSize: 13 }}>Kategori Tiket</span>
-                  <span style={{ fontWeight: 600 }}>{modalType}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
-                  <span style={{ color: "#9ca3af", fontSize: 13 }}>Harga Satuan</span>
-                  <span style={{ fontWeight: 600 }}>{modalPriceStr}</span>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: 16 }}>
-                  <span style={{ color: "#9ca3af", fontSize: 13 }}>Jumlah</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: 4 }}>
-                    <button type="button" onClick={() => changeQty(-1)} aria-label="Kurangi jumlah" style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer" }}>-</button>
-                    <span style={{ fontWeight: 600, width: 20, textAlign: "center" }}>{qty}</span>
-                    <button type="button" onClick={() => changeQty(1)} aria-label="Tambah jumlah" style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer" }}>+</button>
-                  </div>
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                  <span style={{ fontWeight: 600 }}>Total Pembayaran</span>
-                  <span style={{ fontSize: 20, fontWeight: 800, color: modalType === "VIP" ? "#eab308" : "#3b82f6" }}>{formatRupiah(currentPrice * qty)}</span>
-                 </div>
+      {/* ══════════════ CHECKOUT MODAL ══════════════ */}
+      <div
+        className={`modal-overlay${modalOpen ? " open" : ""}`}
+        id="checkoutModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title-text"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) closeModal();
+        }}
+      >
+        <div className="modal-box">
+          <div className="modal-header">
+            <h2 className="modal-title" id="modal-title-text">
+              PESAN TIKET
+            </h2>
+            <button
+              className="modal-close"
+              onClick={closeModal}
+              aria-label="Tutup dialog pembelian tiket"
+            >
+              ×
+            </button>
+          </div>
+          <div className="modal-body">
+            <div className="selected-ticket">
+              <div className="st-left">
+                <small>Kategori Tiket</small>
+                <strong id="modal-type">{modalType} Access</strong>
+                <em>Lapangan Gasibu · 2026</em>
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                 <div>
-                   <label style={{ display: "block", fontSize: 13, marginBottom: 8, color: "#d1d5db" }}>Nama Lengkap Sesuai KTP <span style={{ color: "#ef4444" }}>*</span></label>
-                   <input ref={nameInputRef} type="text" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Misal: Bintang Ilham" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: nameError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
-                   {nameError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nama wajib diisi</span>}
-                 </div>
-                 <div>
-                   <label style={{ display: "block", fontSize: 13, marginBottom: 8, color: "#d1d5db" }}>Email Aktif <span style={{ color: "#ef4444" }}>*</span></label>
-                   <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="Misal: bintang@example.com" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: emailError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
-                   {emailError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Email tidak valid</span>}
-                 </div>
-                 <div>
-                   <label style={{ display: "block", fontSize: 13, marginBottom: 8, color: "#d1d5db" }}>Nomor WhatsApp <span style={{ color: "#ef4444" }}>*</span></label>
-                   <div style={{ display: "flex", gap: 8 }}>
-                     <select value={phoneCode} onChange={(e) => setPhoneCode(e.target.value)} style={{ padding: "12px 8px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", outline: "none" }}>
-                       <option value="+62">ID (+62)</option>
-                     </select>
-                     <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value.replace(/[^0-9]/g, ""))} placeholder="81234567890" style={{ flex: 1, padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: phoneError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
-                   </div>
-                   {phoneError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nomor HP terlalu pendek</span>}
-                 </div>
+              <div className="st-right">
+                <small>Harga / tiket</small>
+                <div className="st-price" id="modal-price">
+                  {modalPriceStr}
+                </div>
               </div>
             </div>
-            <div style={{ padding: 24, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-              <button disabled={checkoutDisabled} onClick={handleCheckout} style={{ ...checkoutStyle, width: "100%", padding: 14, borderRadius: 12, border: "none", color: "#fff", fontWeight: 700, cursor: checkoutDisabled ? "not-allowed" : "pointer", background: checkoutDisabled ? "rgba(255,255,255,0.1)" : "linear-gradient(135deg, #7c3aed, #ec4899)" }}>
-                 {checkoutText}
+            <div
+              className="qty-control"
+              role="group"
+              aria-label="Pilih jumlah tiket"
+            >
+              <div className="qty-label">Jumlah Tiket</div>
+              <button
+                className="qty-btn"
+                onClick={() => changeQty(-1)}
+                aria-label="Kurangi jumlah tiket"
+              >
+                −
+              </button>
+              <div
+                className="qty-number"
+                id="qty-display"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {qty}
+              </div>
+              <button
+                className="qty-btn"
+                onClick={() => changeQty(1)}
+                aria-label="Tambah jumlah tiket"
+              >
+                +
               </button>
             </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="buyer-name">
+                Nama Lengkap
+              </label>
+              <input
+                ref={nameInputRef}
+                className={`form-input${nameError ? " error" : ""}`}
+                type="text"
+                id="buyer-name"
+                placeholder="Masukkan nama sesuai KTP"
+                autoComplete="name"
+                aria-required="true"
+                value={buyerName}
+                onChange={(e) => {
+                  setBuyerName(e.target.value);
+                  setNameError(false);
+                }}
+              />
+              <div className="error-msg" id="err-name" style={{ display: nameError ? "block" : "none" }}>
+                Nama lengkap wajib diisi
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="buyer-email">
+                Alamat Email
+              </label>
+              <input
+                className={`form-input${emailError ? " error" : ""}`}
+                type="email"
+                id="buyer-email"
+                placeholder="tiket@email.com"
+                autoComplete="email"
+                aria-required="true"
+                value={buyerEmail}
+                onChange={(e) => {
+                  setBuyerEmail(e.target.value);
+                  setEmailError(false);
+                }}
+              />
+              <div className="error-msg" id="err-email" style={{ display: emailError ? "block" : "none" }}>
+                Masukkan email yang valid
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label" htmlFor="buyer-phone">
+                No. WhatsApp
+              </label>
+              <div style={{ display: "flex", gap: "8px" }}>
+                <div style={{ position: "relative", width: "110px", flexShrink: 0 }}>
+                  <select
+                    className="form-input"
+                    value={phoneCode}
+                    onChange={(e) => setPhoneCode(e.target.value)}
+                    style={{
+                      paddingRight: "28px",
+                      appearance: "none",
+                      cursor: "pointer",
+                      backgroundColor: "rgba(255, 255, 255, 0.05)",
+                      color: "#e5e7eb",
+                      border: "1px solid rgba(255, 255, 255, 0.1)",
+                      display: "block",
+                      width: "100%",
+                    }}
+                    aria-label="Kode Negara"
+                  >
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+62">🇮🇩 +62</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+60">🇲🇾 +60</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+65">🇸🇬 +65</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+66">🇹🇭 +66</option>
+                    <option style={{ background: "#111827", color: "#e5e7eb", padding: "8px" }} value="+1">🇺🇸 +1</option>
+                  </select>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: "12px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      pointerEvents: "none",
+                      color: "#9ca3af",
+                      fontSize: "12px",
+                    }}
+                  >
+                    ▼
+                  </div>
+                </div>
+                <input
+                  className={`form-input${phoneError ? " error" : ""}`}
+                  type="tel"
+                  id="buyer-phone"
+                  placeholder="8xx xxxx xxxx"
+                  autoComplete="tel-national"
+                  aria-required="true"
+                  value={buyerPhone}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/\D/g, "");
+                    const cleanVal = val.startsWith("0") ? val.substring(1) : val;
+                    setBuyerPhone(cleanVal);
+                    setPhoneError(false);
+                  }}
+                  style={{ flex: 1, backgroundColor: "rgba(255, 255, 255, 0.05)", border: "1px solid rgba(255, 255, 255, 0.1)" }}
+                />
+              </div>
+              <div className="error-msg" id="err-phone" style={{ display: phoneError ? "block" : "none" }}>
+                Nomor WhatsApp wajib diisi (minimal 8 angka)
+              </div>
+            </div>
+            <div
+              className="modal-total-detail"
+              style={{
+                background: "rgba(139, 92, 246, 0.1)",
+                padding: "16px",
+                borderRadius: "12px",
+                border: "1px solid rgba(139, 92, 246, 0.3)",
+                marginTop: "16px",
+                marginBottom: "20px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "8px",
+                  fontSize: "0.9rem",
+                  color: "#d8b4fe",
+                }}
+              >
+                <span>
+                  Harga Tiket ({qty}x {formatRupiah(currentPrice)})
+                </span>
+                <span>{formatRupiah(currentPrice * qty)}</span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: "12px",
+                  fontSize: "0.9rem",
+                  color: "#d8b4fe",
+                }}
+              >
+                <span>Biaya Platform</span>
+                <span style={{ color: "#34d399", fontWeight: 500 }}>Gratis</span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  borderTop: "1px dashed rgba(139, 92, 246, 0.3)",
+                  paddingTop: "12px",
+                  fontWeight: "bold",
+                  alignItems: "center",
+                }}
+              >
+                <span style={{ color: "#fff", fontSize: "0.95rem" }}>
+                  Total Pembayaran
+                </span>
+                <span
+                  style={{
+                    color: "#fff",
+                    fontSize: "1.3rem",
+                    textShadow: "0 0 10px rgba(139, 92, 246, 0.5)",
+                  }}
+                  id="modal-total"
+                  aria-live="polite"
+                  aria-atomic="true"
+                >
+                  {formatRupiah(currentPrice * qty)}
+                </span>
+              </div>
+              {qty === 2 && (
+                <div
+                  style={{
+                    marginTop: "12px",
+                    fontSize: "0.8rem",
+                    color: "#fca5a5",
+                    textAlign: "center",
+                    backgroundColor: "rgba(220, 38, 38, 0.2)",
+                    padding: "6px",
+                    borderRadius: "6px",
+                  }}
+                >
+                  ⚠️ Maksimal pembelian dibatasi 2 tiket per transaksi
+                </div>
+              )}
+            </div>
+            <button
+              className="checkout-btn"
+              id="checkout-btn"
+              onClick={handleCheckout}
+              disabled={checkoutDisabled}
+              style={checkoutStyle}
+              aria-label="Lanjutkan ke proses pembayaran Midtrans"
+            >
+              {checkoutText}
+            </button>
+            <div className="secure-note" aria-label="Informasi keamanan">
+              🔒{" "}
+              <span>
+                Pembayaran aman melalui <strong>Midtrans</strong> · Terenkripsi
+                SSL 256-bit
+              </span>
+            </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {toastVisible && (
-        <div className="toast" style={{ position: "fixed", bottom: 24, right: 24, background: "#1a1a2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "16px 20px", display: "flex", gap: 12, alignItems: "center", boxShadow: "0 10px 40px rgba(0,0,0,0.5)", zIndex: 1000, animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-          <div style={{ width: 28, height: 28, borderRadius: "50%", background: toastData.icon === "✓" || toastData.icon === "🎉" ? "rgba(16,185,129,0.2)" : "rgba(239,68,68,0.2)", color: toastData.icon === "✓" || toastData.icon === "🎉" ? "#10b981" : "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14 }}>{toastData.icon}</div>
-          <div>
-            <h4 style={{ margin: "0 0 2px", fontSize: 14, fontWeight: 600 }}>{toastData.title}</h4>
-            <p style={{ margin: 0, fontSize: 13, color: "#9ca3af" }}>{toastData.msg}</p>
-          </div>
+      {/* Toast Notification */}
+      <div
+        className={`toast${toastVisible ? " show" : ""}`}
+        id="toast"
+        role="alert"
+        aria-live="assertive"
+      >
+        <span className="toast-icon" id="toast-icon" aria-hidden="true">
+          {toastData.icon}
+        </span>
+        <div className="toast-text">
+          <strong id="toast-title">{toastData.title}</strong>
+          <span id="toast-msg">{toastData.msg}</span>
         </div>
-      )}
-    </div>
+      </div>
+    </>
   );
 }
