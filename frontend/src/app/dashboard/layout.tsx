@@ -77,7 +77,7 @@ export default function DashboardLayout({
           </div>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-7">
+          <nav className="hidden md:flex" style={{ alignItems: "center", gap: 28 }}>
             {[
               { href: "/dashboard", label: "Beli Tiket" },
               { href: "/dashboard/my-tickets", label: "Tiket Saya" },
