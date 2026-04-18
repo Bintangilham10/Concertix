@@ -56,7 +56,6 @@ export default function MyTicketsPage() {
   const handleDownloadPdf = (ticketId: string) => {
     const token = localStorage.getItem("access_token");
     const url = `${API_BASE_URL}/tickets/${ticketId}/pdf`;
-    // Open in new tab with auth
     window.open(url + `?token=${token}`, "_blank");
   };
 
@@ -72,102 +71,76 @@ export default function MyTicketsPage() {
   };
 
   return (
-    <div className="min-h-screen text-white" style={{ background: "linear-gradient(180deg, #0a0a1a 0%, #1a1033 100%)" }}>
-      {/* Content */}
-      <main className="max-w-[1100px] mx-auto px-5 py-8 sm:py-10">
-        <h1 className="text-2xl sm:text-3xl font-extrabold mb-2 bg-gradient-to-br from-white to-[#a78bfa] bg-clip-text text-transparent">
+    <div style={{ minHeight: "100vh", color: "#fff", background: "linear-gradient(180deg, #0a0a1a 0%, #1a1033 100%)" }}>
+      <main style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 20px" }}>
+        <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, background: "linear-gradient(135deg, #fff, #a78bfa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
           🎫 Tiket Saya
         </h1>
-        <p className="text-[#9ca3af] mb-8 text-sm sm:text-base">
+        <p style={{ color: "#9ca3af", marginBottom: 32, fontSize: 15 }}>
           Lihat dan kelola semua tiket konser yang telah kamu pesan
         </p>
 
         {loading && (
-          <div className="text-center py-16 text-[#9ca3af]">
-            <div className="text-3xl mb-3">⏳</div>
+          <div style={{ textAlign: "center", padding: "64px 0", color: "#9ca3af" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>⏳</div>
             Memuat tiket...
           </div>
         )}
 
         {error && (
-          <div className="text-center py-16 text-[#f87171]">
-            <div className="text-3xl mb-3">❌</div>
+          <div style={{ textAlign: "center", padding: "64px 0", color: "#f87171" }}>
+            <div style={{ fontSize: 32, marginBottom: 12 }}>❌</div>
             {error}
           </div>
         )}
 
         {!loading && !error && tickets.length === 0 && (
-          <div className="text-center py-16 px-6 bg-white/5 rounded-2xl border border-dashed border-white/10">
-            <div className="text-5xl mb-4">🎟</div>
-            <h3 className="text-xl mb-2">Belum Ada Tiket</h3>
-            <p className="text-[#9ca3af] mb-6">Kamu belum membeli tiket konser apapun.</p>
-            <a href="/dashboard" className="inline-block px-7 py-3 bg-gradient-to-br from-[#7c3aed] to-[#a855f7] rounded-xl text-white font-semibold text-sm hover:scale-105 transition-transform">
+          <div style={{ textAlign: "center", padding: "64px 24px", background: "rgba(255,255,255,0.05)", borderRadius: 16, border: "1px dashed rgba(255,255,255,0.1)" }}>
+            <div style={{ fontSize: 48, marginBottom: 16 }}>🎟</div>
+            <h3 style={{ fontSize: 20, marginBottom: 8 }}>Belum Ada Tiket</h3>
+            <p style={{ color: "#9ca3af", marginBottom: 24 }}>Kamu belum membeli tiket konser apapun.</p>
+            <a href="/dashboard" style={{ display: "inline-block", padding: "12px 28px", background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 12, color: "#fff", fontWeight: 600, textDecoration: "none" }}>
               Beli Tiket Sekarang →
             </a>
           </div>
         )}
 
         {!loading && !error && tickets.length > 0 && (
-          <div className="flex flex-col gap-4">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {tickets.map((ticket) => {
               const st = statusConfig[ticket.status] || statusConfig.pending;
               return (
-                <div
-                  key={ticket.id}
-                  className="group flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-5 bg-white/5 border border-white/10 hover:border-[#8b5cf6]/40 rounded-2xl p-5 md:p-6 transition-colors"
-                >
-                  <div className="flex items-center gap-4 w-full md:w-auto">
-                    {/* Icon */}
-                    <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-gradient-to-br from-[#8b5cf6]/30 to-[#ec4899]/30 flex items-center justify-center text-xl md:text-2xl shrink-0">
+                <div key={ticket.id} className="ticket-item-card" style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 20, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "20px 24px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 16, minWidth: 250, flex: 1 }}>
+                    <div style={{ width: 56, height: 56, borderRadius: 12, background: "linear-gradient(135deg, rgba(139,92,246,0.3), rgba(236,72,153,0.3))", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, flexShrink: 0 }}>
                       🎵
                     </div>
-                    {/* Mobile Title & Badge Container */}
-                    <div className="flex-1 md:hidden flex flex-col items-start gap-1">
-                      <div className="font-bold text-lg leading-tight">{ticket.concert?.name || "Konser"}</div>
-                      <div
-                        className="inline-block px-3 py-1 rounded-full text-xs font-semibold mt-1"
-                        style={{ color: st.color, background: st.bg, border: `1px solid ${st.color}33` }}
-                      >
-                        {st.label}
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: "1.1rem", marginBottom: 4 }}>
+                        {ticket.concert?.name || "Konser"}
+                      </div>
+                      <div style={{ color: "#9ca3af", fontSize: 13, marginBottom: 4 }}>
+                        📍 {ticket.concert?.venue || "-"} · 📅 {formatDate(ticket.concert?.date || "")}
+                      </div>
+                      <div style={{ color: "#6b7280", fontSize: 12 }}>
+                        ID: {ticket.id.substring(0, 8)}...
                       </div>
                     </div>
                   </div>
 
-                  {/* Info (Desktop handles Title) */}
-                  <div className="flex-1 w-full md:w-auto">
-                    <div className="hidden md:block font-bold text-[1.05rem] mb-1">
-                      {ticket.concert?.name || "Konser"}
-                    </div>
-                    <div className="text-[#9ca3af] text-xs sm:text-[0.85rem]">
-                      📍 {ticket.concert?.venue || "-"} <br className="sm:hidden" /> <span className="hidden sm:inline">·</span> 📅 {formatDate(ticket.concert?.date || "")}
-                    </div>
-                    <div className="text-[#6b7280] text-xs mt-1">
-                      ID: {ticket.id.substring(0, 8)}...
+                  <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                    <div style={{ padding: "6px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, color: st.color, background: st.bg, border: `1px solid ${st.color}33` }}>
+                      {st.label}
                     </div>
                   </div>
 
-                  {/* Desktop Badge */}
-                  <div
-                    className="hidden md:block px-4 py-1.5 rounded-full text-[0.8rem] font-semibold whitespace-nowrap"
-                    style={{ color: st.color, background: st.bg, border: `1px solid ${st.color}33` }}
-                  >
-                    {st.label}
-                  </div>
-
-                  {/* Price & Actions Container */}
-                  <div className="flex items-center justify-between w-full md:w-auto md:justify-end gap-4 mt-2 md:mt-0 pt-3 md:pt-0 border-t border-white/5 md:border-none">
-                    {/* Price */}
-                    <div className="font-bold text-[#a78bfa] text-base md:text-[1.1rem]">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 16, minWidth: 150 }}>
+                    <div style={{ fontWeight: 700, color: "#a78bfa", fontSize: "1.1rem" }}>
                       {formatRupiah(ticket.concert?.price || 0)}
                     </div>
-
-                    {/* Download Button */}
                     {ticket.status === "paid" && (
-                      <button
-                        onClick={() => handleDownloadPdf(ticket.id)}
-                        className="px-4 py-2 md:py-2.5 bg-gradient-to-br from-[#7c3aed] to-[#a855f7] rounded-xl text-white font-semibold text-xs md:text-[0.85rem] whitespace-nowrap hover:scale-105 hover:shadow-[0_4px_20px_rgba(124,58,237,0.4)] transition-all cursor-pointer border-none"
-                      >
-                        📄 <span className="hidden sm:inline">E-Ticket</span><span className="inline sm:hidden">Unduh</span>
+                      <button onClick={() => handleDownloadPdf(ticket.id)} style={{ padding: "10px 16px", background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 10, color: "#fff", fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                        📄 E-Ticket
                       </button>
                     )}
                   </div>
@@ -177,6 +150,25 @@ export default function MyTicketsPage() {
           </div>
         )}
       </main>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .ticket-item-card {
+            flex-direction: column;
+            align-items: flex-start !important;
+          }
+          .ticket-item-card > div {
+             width: 100%;
+             justify-content: flex-start !important;
+          }
+          .ticket-item-card > div:last-child {
+             justify-content: space-between !important;
+             border-top: 1px solid rgba(255,255,255,0.05);
+             padding-top: 16px;
+             margin-top: 8px;
+          }
+        }
+      `}</style>
     </div>
   );
 }
