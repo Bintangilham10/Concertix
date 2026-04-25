@@ -51,21 +51,20 @@ export default function LoginPage() {
           <p className="eyebrow">KBR 2026 · Konser Bandung Raya</p>
           <h1 className="auth-title">Selamat datang kembali di Concertix</h1>
           <p className="auth-copy">
-            Masuk untuk akses tiket resmi, dashboard transaksi, dan verifikasi
-            blockchain. Nikmati pengalaman konser yang aman dan eksklusif dari
-            layar Anda.
+            Masuk untuk membeli tiket resmi dan mengelola pesanan Anda.
+            Nikmati pengalaman nonton konser dengan mudah, cepat, dan aman.
           </p>
           <div className="auth-highlights">
             <div>
-              <p className="auth-highlight-label">Tiket resmi</p>
+              <p className="auth-highlight-label">Tiket Resmi</p>
               <p className="auth-highlight-value">
                 Pembelian cepat &amp; terverifikasi
               </p>
             </div>
             <div>
-              <p className="auth-highlight-label">Blockchain</p>
+              <p className="auth-highlight-label">Transaksi Aman</p>
               <p className="auth-highlight-value">
-                Riwayat transaksi transparan
+                Riwayat pembelian mudah diakses
               </p>
             </div>
           </div>

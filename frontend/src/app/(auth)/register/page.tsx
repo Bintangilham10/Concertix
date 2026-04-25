@@ -58,20 +58,20 @@ export default function RegisterPage() {
           <p className="eyebrow">KBR 2026 · Konser Bandung Raya</p>
           <h1 className="auth-title">Mulai perjalananmu bersama Concertix</h1>
           <p className="auth-copy">
-            Daftar untuk membeli tiket resmi, mengamankan akses backstage, dan
-            mendapatkan notifikasi lineup terbaru dalam satu platform.
+            Daftar sekarang untuk membeli tiket konser resmi impianmu,
+            dapatkan update terbaru, dan nikmati kemudahan bertransaksi!
           </p>
           <div className="auth-highlights">
             <div>
-              <p className="auth-highlight-label">Keamanan</p>
+              <p className="auth-highlight-label">Keamanan Terjamin</p>
               <p className="auth-highlight-value">
-                Verifikasi blockchain otomatis
+                Transaksi 100% aman
               </p>
             </div>
             <div>
-              <p className="auth-highlight-label">Akses eksklusif</p>
+              <p className="auth-highlight-label">Akses Mudah</p>
               <p className="auth-highlight-value">
-                Update langsung dari panitia
+                Beli tiket langsung dari satu tempat
               </p>
             </div>
           </div>
