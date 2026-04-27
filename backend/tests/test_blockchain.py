@@ -20,26 +20,17 @@ class TestBlockchain:
         assert "chain_valid" in data
         assert isinstance(data["chain_valid"], bool)
 
-    def test_blockchain_verify(self):
-        """GET /blockchain/verify should return chain integrity check."""
+    def test_blockchain_verify_requires_auth(self):
+        """GET /blockchain/verify should require authentication."""
         response = client.get("/blockchain/verify")
-        assert response.status_code == 200
-        data = response.json()
-        assert "valid" in data
-        assert "total_blocks" in data
-        assert "errors" in data
-        assert isinstance(data["errors"], list)
+        assert response.status_code == 403
 
-    def test_blockchain_chain(self):
-        """GET /blockchain/chain should return blocks list."""
+    def test_blockchain_chain_requires_auth(self):
+        """GET /blockchain/chain should require authentication."""
         response = client.get("/blockchain/chain")
-        assert response.status_code == 200
-        data = response.json()
-        assert isinstance(data, list)
+        assert response.status_code == 403
 
-    def test_ticket_not_on_blockchain(self):
-        """GET /blockchain/ticket/{id} for non-existent ticket."""
+    def test_ticket_blockchain_status_requires_auth(self):
+        """GET /blockchain/ticket/{id} should require authentication."""
         response = client.get("/blockchain/ticket/00000000-0000-0000-0000-000000000000")
-        assert response.status_code == 200
-        data = response.json()
-        assert data["is_on_blockchain"] is False
+        assert response.status_code == 403
