@@ -59,7 +59,7 @@ export default function MyTicketsPage() {
   }, [router]);
 
   const handleDownloadPdf = async (ticketId: string) => {
-    const token = localStorage.getItem("access_token");
+    const token = sessionStorage.getItem("access_token");
     if (!token) {
       setError("Sesi login habis. Silakan login ulang.");
       return;
