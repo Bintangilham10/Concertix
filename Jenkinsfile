@@ -4,7 +4,7 @@ pipeline {
     environment {
         DOCKER_COMPOSE = 'docker-compose'
         SONAR_HOST_URL = 'http://sonarqube:9000'
-        ZAP_TARGET = 'http://backend:8000'
+        ZAP_TARGET = 'http://localhost:8000'
     }
 
     stages {
@@ -39,14 +39,15 @@ pipeline {
                 stage('Test Frontend') {
                     steps {
                         dir('frontend') {
-                            sh 'npm run test -- --coverage || echo "No tests configured yet"'
+                            sh 'npm run lint'
                         }
                     }
                 }
                 stage('Test Backend') {
                     steps {
                         dir('backend') {
-                            sh 'pytest --junitxml=reports/pytest-results.xml --cov=app --cov-report=xml:reports/coverage.xml || echo "No tests configured yet"'
+                            sh 'mkdir -p reports'
+                            sh 'pytest --junitxml=reports/pytest-results.xml --cov=app --cov-report=xml:reports/coverage.xml'
                         }
                     }
                     post {
@@ -58,7 +59,7 @@ pipeline {
             }
         }
 
-        stage('Security Scan') {
+        stage('Static Security Scan') {
             parallel {
                 stage('SonarQube SAST') {
                     steps {
@@ -98,31 +99,6 @@ pipeline {
                     }
                 }
 
-                stage('OWASP ZAP DAST') {
-                    steps {
-                        sh """
-                            docker run --rm --network=host \
-                                -v \$(pwd)/reports:/zap/wrk/:rw \
-                                ghcr.io/zaproxy/zaproxy:stable \
-                                zap-api-scan.py \
-                                -t ${ZAP_TARGET}/openapi.json \
-                                -f openapi \
-                                -r zap_report.html \
-                                -J zap_report.json \
-                                -l WARN
-                        """
-                    }
-                    post {
-                        always {
-                            publishHTML(target: [
-                                reportDir: 'reports',
-                                reportFiles: 'zap_report.html',
-                                reportName: 'OWASP ZAP Report',
-                                keepAll: true
-                            ])
-                        }
-                    }
-                }
             }
         }
 
@@ -148,6 +124,33 @@ pipeline {
                 sh "sleep 15"
                 sh "curl -f http://localhost:8000/ || exit 1"
                 echo 'Deployment successful!'
+            }
+        }
+
+        stage('OWASP ZAP DAST') {
+            steps {
+                sh 'mkdir -p reports'
+                sh """
+                    docker run --rm --network=host \
+                        -v \$(pwd)/reports:/zap/wrk/:rw \
+                        ghcr.io/zaproxy/zaproxy:stable \
+                        zap-api-scan.py \
+                        -t ${ZAP_TARGET}/openapi.json \
+                        -f openapi \
+                        -r zap_report.html \
+                        -J zap_report.json \
+                        -l WARN
+                """
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        reportDir: 'reports',
+                        reportFiles: 'zap_report.html',
+                        reportName: 'OWASP ZAP Report',
+                        keepAll: true
+                    ])
+                }
             }
         }
     }
