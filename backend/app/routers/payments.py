@@ -1,7 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from decimal import Decimal, InvalidOperation
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.blockchain import Block
 from app.models.ticket import Ticket
 from app.models.transaction import Transaction
 from app.models.user import User
@@ -17,6 +21,7 @@ except ImportError:
     BLOCKCHAIN_ENABLED = False
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/create", response_model=dict, status_code=status.HTTP_201_CREATED)
@@ -91,8 +96,17 @@ async def payment_webhook(
     has_server_key = bool(_settings.MIDTRANS_SERVER_KEY)
 
     if payload.signature_key:
+        if not payload.status_code or not payload.gross_amount:
+            raise HTTPException(
+                status_code=403,
+                detail="Signed webhook must include status_code and gross_amount",
+            )
+
         is_valid = verify_webhook_signature(
-            payload.order_id, "200", payload.gross_amount or "0", payload.signature_key
+            payload.order_id,
+            payload.status_code,
+            payload.gross_amount,
+            payload.signature_key,
         )
         if not is_valid:
             raise HTTPException(status_code=403, detail="Invalid webhook signature")
@@ -111,9 +125,26 @@ async def payment_webhook(
             detail="Transaksi tidak ditemukan",
         )
 
+    if payload.gross_amount is not None:
+        try:
+            paid_amount = Decimal(str(payload.gross_amount))
+            expected_amount = Decimal(str(transaction.amount))
+        except (InvalidOperation, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid payment amount",
+            )
+
+        if paid_amount != expected_amount:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Payment amount does not match transaction",
+            )
+
+    was_success = transaction.status == "success"
+
     # Update transaction status based on Midtrans status
     status_mapping = {
-        "capture": "success",
         "settlement": "success",
         "pending": "pending",
         "deny": "failed",
@@ -122,10 +153,30 @@ async def payment_webhook(
         "refund": "refunded",
     }
 
-    new_status = status_mapping.get(payload.transaction_status, "pending")
+    if payload.transaction_status == "capture":
+        if payload.fraud_status and payload.fraud_status != "accept":
+            new_status = "pending"
+        else:
+            new_status = "success"
+    else:
+        new_status = status_mapping.get(payload.transaction_status, "pending")
+
+    if new_status == "success" and payload.status_code and payload.status_code != "200":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Successful payment webhook must use status_code 200",
+        )
+
+    if was_success and new_status in {"pending", "failed", "expired"}:
+        logger.info(
+            "Ignoring non-terminal Midtrans webhook for already successful order %s",
+            payload.order_id,
+        )
+        return {"status": "ok", "ignored": True}
+
     transaction.status = new_status
     transaction.payment_type = payload.payment_type
-    transaction.midtrans_transaction_id = payload.order_id
+    transaction.midtrans_transaction_id = payload.transaction_id or payload.order_id
 
     # Update ticket status if payment is successful
     if new_status == "success":
@@ -133,20 +184,25 @@ async def payment_webhook(
         ticket.status = "paid"
 
         # T12 Mitigation: Record ticket issuance on blockchain
-        if BLOCKCHAIN_ENABLED:
+        if BLOCKCHAIN_ENABLED and not was_success:
             try:
-                add_ticket_block(
-                    db=db,
-                    ticket_id=str(ticket.id),
-                    user_id=str(ticket.user_id),
-                    concert_id=str(ticket.concert_id),
-                    action="ISSUED",
+                existing_issued_block = (
+                    db.query(Block)
+                    .filter(Block.ticket_id == str(ticket.id), Block.action == "ISSUED")
+                    .first()
                 )
+                if existing_issued_block is None:
+                    add_ticket_block(
+                        db=db,
+                        ticket_id=str(ticket.id),
+                        user_id=str(ticket.user_id),
+                        concert_id=str(ticket.concert_id),
+                        action="ISSUED",
+                    )
             except Exception as e:
                 # Don't fail payment if blockchain recording fails,
                 # but log so it's visible in monitoring/Grafana
-                import logging
-                logging.getLogger(__name__).error(
+                logger.error(
                     f"Blockchain recording failed for ticket {ticket.id}: {e}"
                 )
 

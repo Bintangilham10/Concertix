@@ -7,9 +7,12 @@ so it cannot be reused, even if it hasn't expired yet.
 
 import redis
 from typing import Optional
+import logging
+
 from app.config import get_settings
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 # Redis connection (lazy init)
 _redis_client: Optional[redis.Redis] = None
@@ -26,7 +29,8 @@ def _get_redis() -> Optional[redis.Redis]:
                 socket_connect_timeout=2,
             )
             _redis_client.ping()  # Test connection
-        except (redis.ConnectionError, redis.TimeoutError):
+        except (redis.ConnectionError, redis.TimeoutError) as exc:
+            logger.warning("Redis token blacklist unavailable: %s", exc)
             _redis_client = None
     return _redis_client
 
@@ -44,13 +48,15 @@ def blacklist_token(token: str, ttl_seconds: int = 1800) -> bool:
     """
     client = _get_redis()
     if client is None:
+        logger.warning("Token blacklist write skipped because Redis is unavailable")
         return False
 
     try:
         # Store with prefix for namespace isolation
         client.setex(f"blacklist:{token}", ttl_seconds, "revoked")
         return True
-    except redis.RedisError:
+    except redis.RedisError as exc:
+        logger.warning("Token blacklist write failed: %s", exc)
         return False
 
 
@@ -63,9 +69,10 @@ def is_token_blacklisted(token: str) -> bool:
     """
     client = _get_redis()
     if client is None:
-        return False  # If Redis is down, allow (fail-open for availability)
+        return settings.TOKEN_BLACKLIST_FAIL_CLOSED
 
     try:
         return client.exists(f"blacklist:{token}") > 0
-    except redis.RedisError:
-        return False
+    except redis.RedisError as exc:
+        logger.warning("Token blacklist lookup failed: %s", exc)
+        return settings.TOKEN_BLACKLIST_FAIL_CLOSED

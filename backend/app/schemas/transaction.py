@@ -11,6 +11,9 @@ class PaymentWebhookPayload(BaseModel):
     """Midtrans webhook notification payload (simplified)."""
     order_id: str
     transaction_status: str
+    status_code: Optional[str] = None
+    fraud_status: Optional[str] = None
+    transaction_id: Optional[str] = None
     payment_type: Optional[str] = None
     gross_amount: Optional[str] = None
     signature_key: Optional[str] = None
