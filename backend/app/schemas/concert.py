@@ -37,3 +37,11 @@ class ConcertResponse(ConcertBase):
 
     class Config:
         from_attributes = True
+
+
+class ConcertListResponse(BaseModel):
+    items: list[ConcertResponse]
+    total: int
+    page: int
+    per_page: int
+    total_pages: int
