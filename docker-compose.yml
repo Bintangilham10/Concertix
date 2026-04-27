@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   # ── PostgreSQL Database ──
   db:
@@ -51,6 +49,9 @@ services:
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-concertix_user}:${POSTGRES_PASSWORD:-concertix_pass}@db:5432/${POSTGRES_DB:-concertix}
       REDIS_URL: redis://redis:6379/0
+      DEBUG: ${DEBUG:-true}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-local-dev-jwt-secret-change-before-production}
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:3000}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -60,6 +61,7 @@ services:
         condition: service_healthy
     volumes:
       - ./backend:/app
+    command: sh -c "python -m scripts.init_demo && uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8000}"
     networks:
       - concertix-net
 
@@ -68,6 +70,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_MIDTRANS_CLIENT_KEY: ${NEXT_PUBLIC_MIDTRANS_CLIENT_KEY:-}
     container_name: concertix-frontend
     restart: unless-stopped
     env_file:
