@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { orderTicket, createPayment } from "@/lib/api";
+import { orderTicket, createPayment, getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
 const CONCERT_IDS: Record<string, string> = {
@@ -13,6 +13,11 @@ interface ToastData {
   icon: string;
   title: string;
   msg: string;
+}
+
+interface UserTicketSummary {
+  concert_id: string;
+  status: string;
 }
 
 function formatRupiah(n: number): string {
@@ -40,6 +45,7 @@ export default function DashboardTickets() {
   const [checkoutText, setCheckoutText] = useState("Lanjut ke Pembayaran →");
   const [checkoutDisabled, setCheckoutDisabled] = useState(false);
   const [checkoutStyle, setCheckoutStyle] = useState<React.CSSProperties>({});
+  const [orderedConcertIds, setOrderedConcertIds] = useState<string[]>([]);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -62,7 +68,22 @@ export default function DashboardTickets() {
     [],
   );
 
+  const hasExistingTicket = useCallback(
+    (type: string) => orderedConcertIds.includes(CONCERT_IDS[type]),
+    [orderedConcertIds],
+  );
+
   const openModal = useCallback((type: string, priceStr: string, price: number) => {
+    if (hasExistingTicket(type)) {
+      showToast(
+        "!",
+        "Tidak Bisa Pesan Lagi",
+        "Akun ini sudah memiliki tiket untuk kategori tersebut. Setiap user hanya boleh memesan 1 tiket.",
+        5000,
+      );
+      return;
+    }
+
     setModalType(type);
     setModalPriceStr(priceStr);
     setCurrentPrice(price);
@@ -77,7 +98,7 @@ export default function DashboardTickets() {
     setCheckoutStyle({});
     setModalOpen(true);
     setTimeout(() => nameInputRef.current?.focus(), 100);
-  }, []);
+  }, [hasExistingTicket, showToast]);
 
   const closeModal = useCallback(() => setModalOpen(false), []);
 
@@ -88,6 +109,25 @@ export default function DashboardTickets() {
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [closeModal]);
+
+  useEffect(() => {
+    async function loadExistingTickets() {
+      const user = await getCurrentUser();
+      if (!user) return;
+
+      const tickets = await getMyTickets() as UserTicketSummary[];
+      const blockingStatuses = new Set(["pending", "paid", "used"]);
+      setOrderedConcertIds(
+        tickets
+          .filter((ticket) => blockingStatuses.has(ticket.status))
+          .map((ticket) => ticket.concert_id),
+      );
+    }
+
+    loadExistingTickets().catch(() => {
+      setOrderedConcertIds([]);
+    });
+  }, []);
 
   const handleCheckout = async () => {
     const user = await getCurrentUser();
@@ -115,9 +155,13 @@ export default function DashboardTickets() {
     try {
       const concertId = CONCERT_IDS[modalType];
       if (!concertId) throw new Error("Tipe tiket tidak valid");
+      if (orderedConcertIds.includes(concertId)) {
+        throw new Error("Akun ini sudah memiliki tiket untuk kategori tersebut");
+      }
 
       const ticketResult = await orderTicket(concertId, qty) as { id: string } | { id: string }[];
       const ticketId = Array.isArray(ticketResult) ? ticketResult[0].id : ticketResult.id;
+      setOrderedConcertIds((prev) => Array.from(new Set([...prev, concertId])));
 
       setCheckoutText("Membuat Pembayaran...");
       const paymentResult = await createPayment(ticketId) as { redirect_url: string; snap_token: string };
@@ -132,12 +176,23 @@ export default function DashboardTickets() {
 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal memproses pesanan";
-      showToast("❌", "Gagal", message, 4000);
+      const isLimitError = message.toLowerCase().includes("sudah memiliki tiket")
+        || message.toLowerCase().includes("hanya dapat memesan")
+        || message.toLowerCase().includes("hanya boleh");
+      showToast(
+        isLimitError ? "!" : "❌",
+        isLimitError ? "Tidak Bisa Pesan Lagi" : "Gagal",
+        isLimitError ? "Akun ini sudah memiliki tiket. Setiap user hanya boleh memesan 1 tiket." : message,
+        5000,
+      );
       setCheckoutText("Lanjut ke Pembayaran →");
       setCheckoutDisabled(false);
       setCheckoutStyle({});
     }
   };
+
+  const vipAlreadyOrdered = hasExistingTicket("VIP");
+  const regularAlreadyOrdered = hasExistingTicket("Regular");
 
   return (
     <div>
@@ -146,6 +201,11 @@ export default function DashboardTickets() {
         <p style={{ color: "#9ca3af", marginTop: 6, fontSize: 15 }}>
           Pesan tiket Konser Bandung Raya 2026. Pilih kategori tiket di bawah ini.
         </p>
+        {orderedConcertIds.length > 0 && (
+          <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.28)", color: "#fbbf24", fontSize: 14, fontWeight: 600 }}>
+            Akun ini sudah memiliki tiket. Pemesanan ulang untuk kategori yang sama tidak diperbolehkan.
+          </div>
+        )}
       </div>
 
       <div className="tickets-grid" style={{ display: "grid", gap: 24, gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))" }}>
@@ -153,7 +213,7 @@ export default function DashboardTickets() {
         <article className="ticket-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, position: "relative" }}>
           <div className="ticket-top" style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <span className="ticket-category-badge" style={{ background: "rgba(234, 179, 8, 0.2)", color: "#fef08a", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>⭐ VIP</span>
-            <span className="avail-badge" style={{ color: "#ef4444", fontSize: 12, fontWeight: 600 }}>Limited Seats</span>
+            <span className="avail-badge" style={{ color: vipAlreadyOrdered ? "#fbbf24" : "#ef4444", fontSize: 12, fontWeight: 600 }}>{vipAlreadyOrdered ? "Sudah Dipesan" : "Limited Seats"}</span>
           </div>
           <div className="ticket-type" style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>VIP ACCESS</div>
           <div className="ticket-location" style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>Lapangan Gasibu · Zona Eksklusif Depan Panggung</div>
@@ -166,8 +226,8 @@ export default function DashboardTickets() {
             <li style={{ marginBottom: 8 }}>✨ VIP Lounge Access</li>
             <li style={{ marginBottom: 8 }}>✨ Priority Parking</li>
           </ul>
-          <button className="btn-primary" onClick={() => openModal("VIP", "Rp 1.000", 1000)} style={{ width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg, #eab308, #ca8a04)", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer" }}>
-            Beli Tiket VIP →
+          <button disabled={vipAlreadyOrdered} className="btn-primary" onClick={() => openModal("VIP", "Rp 1.000", 1000)} style={{ width: "100%", padding: 14, borderRadius: 12, background: vipAlreadyOrdered ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #eab308, #ca8a04)", border: "none", color: "#fff", fontWeight: 700, cursor: vipAlreadyOrdered ? "not-allowed" : "pointer", opacity: vipAlreadyOrdered ? 0.7 : 1 }}>
+            {vipAlreadyOrdered ? "Sudah Punya Tiket" : "Beli Tiket VIP"}
           </button>
         </article>
 
@@ -175,7 +235,7 @@ export default function DashboardTickets() {
         <article className="ticket-card" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: 24, position: "relative" }}>
           <div className="ticket-top" style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
             <span className="ticket-category-badge" style={{ background: "rgba(59, 130, 246, 0.2)", color: "#93c5fd", padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 600 }}>🎟 Regular</span>
-            <span className="avail-badge" style={{ color: "#10b981", fontSize: 12, fontWeight: 600 }}>Available</span>
+            <span className="avail-badge" style={{ color: regularAlreadyOrdered ? "#fbbf24" : "#10b981", fontSize: 12, fontWeight: 600 }}>{regularAlreadyOrdered ? "Sudah Dipesan" : "Available"}</span>
           </div>
           <div className="ticket-type" style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>REGULAR ENTRY</div>
           <div className="ticket-location" style={{ fontSize: 13, color: "#9ca3af", marginBottom: 24 }}>Lapangan Gasibu · Zona Festival Luas</div>
@@ -186,8 +246,8 @@ export default function DashboardTickets() {
             <li style={{ marginBottom: 8 }}>✨ Free Parking</li>
             <li style={{ marginBottom: 8 }}>✨ Access to Food Court</li>
           </ul>
-          <button className="btn-primary" onClick={() => openModal("Regular", "Rp 500", 500)} style={{ width: "100%", padding: 14, borderRadius: 12, background: "linear-gradient(135deg, #3b82f6, #2563eb)", border: "none", color: "#fff", fontWeight: 700, cursor: "pointer", marginTop: "auto" }}>
-            Beli Tiket Regular →
+          <button disabled={regularAlreadyOrdered} className="btn-primary" onClick={() => openModal("Regular", "Rp 500", 500)} style={{ width: "100%", padding: 14, borderRadius: 12, background: regularAlreadyOrdered ? "rgba(255,255,255,0.08)" : "linear-gradient(135deg, #3b82f6, #2563eb)", border: "none", color: "#fff", fontWeight: 700, cursor: regularAlreadyOrdered ? "not-allowed" : "pointer", marginTop: "auto", opacity: regularAlreadyOrdered ? 0.7 : 1 }}>
+            {regularAlreadyOrdered ? "Sudah Punya Tiket" : "Beli Tiket Regular"}
           </button>
         </article>
       </div>
