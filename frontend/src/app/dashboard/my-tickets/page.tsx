@@ -33,6 +33,7 @@ export default function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -53,10 +54,42 @@ export default function MyTicketsPage() {
     load();
   }, [router]);
 
-  const handleDownloadPdf = (ticketId: string) => {
+  const handleDownloadPdf = async (ticketId: string) => {
     const token = localStorage.getItem("access_token");
-    const url = `${API_BASE_URL}/tickets/${ticketId}/pdf`;
-    window.open(url + `?token=${token}`, "_blank");
+    if (!token) {
+      setError("Sesi login habis. Silakan login ulang.");
+      return;
+    }
+
+    setDownloadingId(ticketId);
+    setError(null);
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/tickets/${ticketId}/pdf`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null);
+        throw new Error(payload?.detail || "Gagal mengunduh e-ticket");
+      }
+
+      const blob = await response.blob();
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `concertix-ticket-${ticketId.substring(0, 8)}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal mengunduh e-ticket");
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   const formatRupiah = (n: number) => "Rp " + n.toLocaleString("id-ID");
@@ -139,7 +172,7 @@ export default function MyTicketsPage() {
                       {formatRupiah(ticket.concert?.price || 0)}
                     </div>
                     {ticket.status === "paid" && (
-                      <button onClick={() => handleDownloadPdf(ticket.id)} style={{ padding: "10px 16px", background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 10, color: "#fff", fontWeight: 600, fontSize: 13, border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                      <button disabled={downloadingId === ticket.id} onClick={() => handleDownloadPdf(ticket.id)} style={{ padding: "10px 16px", background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 10, color: "#fff", fontWeight: 600, fontSize: 13, border: "none", cursor: downloadingId === ticket.id ? "wait" : "pointer", opacity: downloadingId === ticket.id ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                         📄 E-Ticket
                       </button>
                     )}
