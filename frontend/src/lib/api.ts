@@ -15,7 +15,7 @@ async function fetchApi<T>(
 ): Promise<T> {
   const token =
     typeof window !== "undefined"
-      ? localStorage.getItem("access_token")
+      ? sessionStorage.getItem("access_token")
       : null;
 
   const headers: HeadersInit = {
