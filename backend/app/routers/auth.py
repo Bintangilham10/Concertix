@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
+from app.config import get_settings
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, TokenResponse, UserResponse, TokenRefreshRequest
@@ -148,7 +149,12 @@ async def refresh(
 
     ttl_seconds = get_token_ttl_seconds(payload)
     if ttl_seconds > 0:
-        blacklist_token(refresh_data.refresh_token, ttl_seconds=ttl_seconds)
+        revoked = blacklist_token(refresh_data.refresh_token, ttl_seconds=ttl_seconds)
+        if not revoked and get_settings().TOKEN_BLACKLIST_FAIL_CLOSED:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Token revocation service unavailable",
+            )
 
     return TokenResponse(
         access_token=access_token,
