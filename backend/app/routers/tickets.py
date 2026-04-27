@@ -1,6 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import Response
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -27,8 +28,12 @@ async def order_ticket(
     db: Session = Depends(get_db),
 ):
     """Order ticket(s) for a concert."""
-    # Check concert exists
-    concert = db.query(Concert).filter(Concert.id == order.concert_id).first()
+    concert = (
+        db.query(Concert)
+        .filter(Concert.id == order.concert_id)
+        .with_for_update()
+        .first()
+    )
     if not concert:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -70,7 +75,14 @@ async def order_ticket(
 
     # Reduce available tickets
     concert.available_tickets -= order.quantity
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Setiap user hanya dapat memesan 1 tiket untuk konser ini",
+        )
 
     for t in tickets:
         db.refresh(t)
@@ -99,6 +111,7 @@ async def get_my_tickets(
 @router.get("/{ticket_id}/verify")
 async def verify_ticket(
     ticket_id: str,
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -114,11 +127,15 @@ async def verify_ticket(
             detail="Tiket tidak ditemukan",
         )
 
+    if current_user.role != "admin" and ticket.user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Akses ditolak untuk tiket ini",
+        )
+
     result = {
         "ticket_id": ticket.id,
         "status": ticket.status,
-        "concert_id": ticket.concert_id,
-        "user_id": ticket.user_id,
         "blockchain_verified": False,
         "blockchain_used": False,
     }
