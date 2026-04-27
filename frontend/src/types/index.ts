@@ -25,6 +25,18 @@ export interface Concert {
   created_at: string;
 }
 
+export interface ConcertPayload {
+  name: string;
+  artist: string;
+  description?: string;
+  venue: string;
+  date: string;
+  time: string;
+  price: number;
+  quota: number;
+  image_url?: string;
+}
+
 export interface Ticket {
   id: string;
   user_id: string;

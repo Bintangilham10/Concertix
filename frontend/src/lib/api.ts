@@ -1,4 +1,4 @@
-import type { AuthResponse, User, AdminStats, AdminTransactionsResponse, AdminUsersResponse } from "@/types";
+import type { AuthResponse, User, AdminStats, AdminTransactionsResponse, AdminUsersResponse, Concert, ConcertPayload } from "@/types";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -31,6 +31,10 @@ async function fetchApi<T>(
       detail: "An unexpected error occurred",
     }));
     throw new Error(error.detail || `HTTP ${response.status}`);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json();
@@ -91,6 +95,26 @@ export async function getConcerts(page = 1, perPage = 10) {
 
 export async function getConcertById(id: string) {
   return fetchApi(`/concerts/${id}`);
+}
+
+export async function createConcert(payload: ConcertPayload): Promise<Concert> {
+  return fetchApi<Concert>("/concerts/", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateConcert(id: string, payload: Partial<ConcertPayload>): Promise<Concert> {
+  return fetchApi<Concert>(`/concerts/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteConcert(id: string): Promise<void> {
+  await fetchApi<void>(`/concerts/${id}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Tickets API ──

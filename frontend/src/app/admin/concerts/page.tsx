@@ -4,8 +4,20 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
-import { getConcerts } from "@/lib/api";
-import type { User, Concert } from "@/types";
+import { createConcert, deleteConcert, getConcerts, updateConcert } from "@/lib/api";
+import type { User, Concert, ConcertPayload } from "@/types";
+
+const emptyConcertForm: ConcertPayload = {
+  name: "",
+  artist: "",
+  description: "",
+  venue: "",
+  date: "",
+  time: "",
+  price: 0,
+  quota: 1,
+  image_url: "",
+};
 
 export default function AdminConcertsPage() {
   const router = useRouter();
@@ -24,6 +36,10 @@ export default function AdminConcertsPage() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingConcert, setEditingConcert] = useState<Concert | null>(null);
+  const [formData, setFormData] = useState<ConcertPayload>(emptyConcertForm);
+  const [saving, setSaving] = useState(false);
 
   const fetchConcerts = useCallback(async () => {
     setLoading(true);
@@ -65,6 +81,89 @@ export default function AdminConcertsPage() {
     setLoggingOut(true);
     try { await logoutJwt(); } catch { clearCache(); }
     router.replace("/login");
+  };
+
+  const toDatetimeLocal = (value: string) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const offsetMs = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - offsetMs).toISOString().slice(0, 16);
+  };
+
+  const openCreateForm = () => {
+    setEditingConcert(null);
+    setFormData(emptyConcertForm);
+    setFormOpen(true);
+    setError(null);
+  };
+
+  const openEditForm = (concert: Concert) => {
+    setEditingConcert(concert);
+    setFormData({
+      name: concert.name,
+      artist: concert.artist,
+      description: concert.description || "",
+      venue: concert.venue,
+      date: toDatetimeLocal(concert.date),
+      time: concert.time || "",
+      price: concert.price,
+      quota: concert.quota,
+      image_url: concert.image_url || "",
+    });
+    setFormOpen(true);
+    setError(null);
+  };
+
+  const closeForm = () => {
+    if (saving) return;
+    setFormOpen(false);
+    setEditingConcert(null);
+    setFormData(emptyConcertForm);
+  };
+
+  const handleSaveConcert = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+
+    try {
+      const payload: ConcertPayload = {
+        ...formData,
+        price: Number(formData.price),
+        quota: Number(formData.quota),
+        image_url: formData.image_url?.trim() || undefined,
+        description: formData.description?.trim() || undefined,
+      };
+
+      if (editingConcert) {
+        await updateConcert(editingConcert.id, payload);
+      } else {
+        await createConcert(payload);
+      }
+
+      setFormOpen(false);
+      setEditingConcert(null);
+      setFormData(emptyConcertForm);
+      await fetchConcerts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menyimpan konser.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteConcert = async (concert: Concert) => {
+    const ok = window.confirm(`Hapus konser "${concert.name}"? Aksi ini tidak bisa dibatalkan.`);
+    if (!ok) return;
+
+    setError(null);
+    try {
+      await deleteConcert(concert.id);
+      await fetchConcerts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal menghapus konser.");
+    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -168,7 +267,7 @@ export default function AdminConcertsPage() {
             <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>Manajemen Konser</h1>
             <p style={{ color: "#9ca3af", marginTop: 6, fontSize: 15 }}>Total ada {total || filteredConcerts.length} konser terdaftar yang siap dijual</p>
           </div>
-          <button style={{
+          <button onClick={openCreateForm} style={{
             padding: "10px 20px", fontSize: 14, fontWeight: 600, color: "#fff",
             background: "linear-gradient(135deg, #7c3aed, #ec4899)", borderRadius: 8,
             border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
@@ -279,13 +378,13 @@ export default function AdminConcertsPage() {
                            </div>
                         </td>
                         <td style={{ padding: "16px 24px", textAlign: "right", whiteSpace: "nowrap" }}>
-                          <button style={{ padding: 8, background: "rgba(255,255,255,0.05)", border: "1px solid transparent", borderRadius: 8, cursor: "pointer", marginRight: 8, transition: "all 0.2s" }} title="Edit Konser"
+                          <button onClick={() => openEditForm(c)} style={{ padding: 8, background: "rgba(255,255,255,0.05)", border: "1px solid transparent", borderRadius: 8, cursor: "pointer", marginRight: 8, transition: "all 0.2s" }} title="Edit Konser"
                             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(59,130,246,0.1)"; e.currentTarget.style.borderColor = "rgba(59,130,246,0.3)"; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "transparent"; }}
                           >
                              ✏️
                           </button>
-                          <button style={{ padding: 8, background: "rgba(255,255,255,0.05)", border: "1px solid transparent", borderRadius: 8, cursor: "pointer", transition: "all 0.2s" }} title="Hapus Konser"
+                          <button onClick={() => handleDeleteConcert(c)} style={{ padding: 8, background: "rgba(255,255,255,0.05)", border: "1px solid transparent", borderRadius: 8, cursor: "pointer", transition: "all 0.2s" }} title="Hapus Konser"
                             onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239,68,68,0.1)"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.3)"; }}
                             onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.borderColor = "transparent"; }}
                           >
@@ -335,6 +434,62 @@ export default function AdminConcertsPage() {
             </div>
           )}
         </div>
+
+        {formOpen && (
+          <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.78)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <form onSubmit={handleSaveConcert} style={{ width: "100%", maxWidth: 680, maxHeight: "90vh", overflowY: "auto", background: "#111126", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, padding: 24, boxShadow: "0 24px 80px rgba(0,0,0,0.45)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{editingConcert ? "Edit Konser" : "Tambah Konser Baru"}</h2>
+                <button type="button" onClick={closeForm} style={{ background: "transparent", border: "none", color: "#9ca3af", cursor: "pointer", fontSize: 24, lineHeight: 1 }}>×</button>
+              </div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
+                {[
+                  ["name", "Nama Konser", "text"],
+                  ["artist", "Artis", "text"],
+                  ["venue", "Venue", "text"],
+                  ["time", "Waktu", "text"],
+                  ["price", "Harga", "number"],
+                  ["quota", "Kuota", "number"],
+                ].map(([name, label, type]) => (
+                  <label key={name} style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                    {label}
+                    <input
+                      required
+                      type={type}
+                      min={type === "number" ? 0 : undefined}
+                      value={String(formData[name as keyof ConcertPayload] ?? "")}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, [name]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                      style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }}
+                    />
+                  </label>
+                ))}
+
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                  Tanggal
+                  <input required type="datetime-local" value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }} />
+                </label>
+
+                <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                  URL Gambar
+                  <input type="url" value={formData.image_url || ""} onChange={(e) => setFormData((prev) => ({ ...prev, image_url: e.target.value }))} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }} />
+                </label>
+              </div>
+
+              <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600, marginTop: 14 }}>
+                Deskripsi
+                <textarea value={formData.description || ""} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} rows={4} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none", resize: "vertical" }} />
+              </label>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+                <button type="button" onClick={closeForm} disabled={saving} style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.12)", background: "transparent", color: "#d1d5db", cursor: saving ? "not-allowed" : "pointer" }}>Batal</button>
+                <button type="submit" disabled={saving} style={{ padding: "10px 18px", borderRadius: 8, border: "none", background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", fontWeight: 700, cursor: saving ? "wait" : "pointer", opacity: saving ? 0.7 : 1 }}>
+                  {saving ? "Menyimpan..." : "Simpan Konser"}
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
       </main>
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
