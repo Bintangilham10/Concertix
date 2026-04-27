@@ -24,9 +24,9 @@ from app.services.auth_service import hash_password
 from app.config import get_settings
 
 # ── Configuration ──────────────────────────────────────────────
-ADMIN_EMAIL = "admin@concertix.com"
-ADMIN_PASSWORD = "Admin@123"
-ADMIN_NAME = "Admin Concertix"
+ADMIN_EMAIL = os.getenv("DEMO_ADMIN_EMAIL", "admin@concertix.com")
+ADMIN_PASSWORD = os.getenv("DEMO_ADMIN_PASSWORD", "Admin@123")
+ADMIN_NAME = os.getenv("DEMO_ADMIN_NAME", "Admin Concertix")
 
 
 def seed_admin():
@@ -61,7 +61,7 @@ def seed_admin():
         db.commit()
         print(f"[OK] Admin user created successfully!")
         print(f"   Email:    {ADMIN_EMAIL}")
-        print(f"   Password: {ADMIN_PASSWORD}")
+        print("   Password: configured via DEMO_ADMIN_PASSWORD")
         print(f"   Role:     admin")
 
     except Exception as e:
