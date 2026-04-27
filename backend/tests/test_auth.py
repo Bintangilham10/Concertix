@@ -10,7 +10,7 @@ client = TestClient(app)
 
 # Unique email per test run to avoid conflicts
 import uuid
-TEST_EMAIL = f"test_{uuid.uuid4().hex[:8]}@concertix.test"
+TEST_EMAIL = f"test_{uuid.uuid4().hex[:8]}@example.com"
 TEST_PASSWORD = "SecureP@ss123"
 TEST_NAME = "Test User"
 
