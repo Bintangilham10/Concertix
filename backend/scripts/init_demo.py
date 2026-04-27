@@ -104,7 +104,7 @@ def init_demo() -> None:
         db.commit()
         print(
             "[init-demo] Database ready. "
-            f"Inserted {inserted} concerts. Admin login: {ADMIN_EMAIL} / {ADMIN_PASSWORD}"
+            f"Inserted {inserted} concerts. Admin login email: {ADMIN_EMAIL}"
         )
     except Exception:
         db.rollback()
