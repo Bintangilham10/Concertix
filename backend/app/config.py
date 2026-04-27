@@ -26,6 +26,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "Concertix API"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = True
+    EXPOSE_API_DOCS: bool = False
+    EXPOSE_METRICS: bool = False
 
     # T7: CORS production whitelist (comma-separated if multiple)
     CORS_ALLOWED_ORIGIN: str = ""
@@ -40,6 +42,10 @@ class Settings(BaseSettings):
 
 
 _INSECURE_SECRETS = {"change-this-to-a-secure-secret-key", "secret", ""}
+
+
+def _has_real_secret(value: str) -> bool:
+    return bool(value) and not value.startswith("your_")
 
 
 @lru_cache()
@@ -66,11 +72,21 @@ def get_settings() -> Settings:
             "https://concertix.vercel.app."
         )
 
+    if not settings.DEBUG and not settings.TOKEN_BLACKLIST_FAIL_CLOSED:
+        raise ValueError(
+            "TOKEN_BLACKLIST_FAIL_CLOSED must be true in production so revoked "
+            "tokens are rejected if Redis is unavailable."
+        )
+
+    if not settings.DEBUG and not _has_real_secret(settings.MIDTRANS_SERVER_KEY):
+        raise ValueError(
+            "MIDTRANS_SERVER_KEY must be set in production so payment webhooks "
+            "cannot be spoofed."
+        )
+
     if settings.MIDTRANS_IS_PRODUCTION and (
-        not settings.MIDTRANS_SERVER_KEY
-        or settings.MIDTRANS_SERVER_KEY.startswith("your_")
-        or not settings.MIDTRANS_CLIENT_KEY
-        or settings.MIDTRANS_CLIENT_KEY.startswith("your_")
+        not _has_real_secret(settings.MIDTRANS_SERVER_KEY)
+        or not _has_real_secret(settings.MIDTRANS_CLIENT_KEY)
     ):
         raise ValueError(
             "MIDTRANS_SERVER_KEY and MIDTRANS_CLIENT_KEY must be set before enabling "
