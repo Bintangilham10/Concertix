@@ -1,19 +1,28 @@
-from pydantic import BaseModel, EmailStr
-from typing import Optional
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserBase(BaseModel):
-    email: str
-    full_name: str
+    email: EmailStr
+    full_name: str = Field(..., min_length=2, max_length=120)
 
 
 class UserCreate(UserBase):
-    password: str
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_must_be_strong(cls, value: str) -> str:
+        has_upper = any(char.isupper() for char in value)
+        has_lower = any(char.islower() for char in value)
+        has_digit = any(char.isdigit() for char in value)
+        if not (has_upper and has_lower and has_digit):
+            raise ValueError("Password harus mengandung huruf besar, huruf kecil, dan angka")
+        return value
 
 
 class UserLogin(BaseModel):
-    email: str
-    password: str
+    email: EmailStr
+    password: str = Field(..., min_length=1, max_length=128)
 
 
 class UserResponse(UserBase):
