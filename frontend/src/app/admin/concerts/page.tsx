@@ -313,7 +313,7 @@ export default function AdminConcertsPage() {
             <div style={{ padding: "80px 24px", textAlign: "center" }}>
               <p style={{ fontSize: 48, margin: "0 0 16px", opacity: 0.5 }}>🎸</p>
               <p style={{ fontSize: 18, fontWeight: 600, margin: "0 0 8px" }}>Katalog masih kosong</p>
-              <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>Gunakan tombol 'Tambah Konser Baru' untuk memulai.</p>
+              <p style={{ color: "#9ca3af", fontSize: 14, margin: 0 }}>Gunakan tombol &apos;Tambah Konser Baru&apos; untuk memulai.</p>
             </div>
           ) : (
             <div style={{ overflowX: "auto" }}>
