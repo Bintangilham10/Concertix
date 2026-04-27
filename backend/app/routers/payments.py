@@ -2,6 +2,7 @@ from decimal import Decimal, InvalidOperation
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -35,6 +36,7 @@ async def create_payment(
     ticket = (
         db.query(Ticket)
         .filter(Ticket.id == payment_data.ticket_id, Ticket.user_id == current_user.id)
+        .with_for_update()
         .first()
     )
     if not ticket:
@@ -53,23 +55,54 @@ async def create_payment(
     concert = ticket.concert
     amount = concert.price
 
-    # Create transaction record
-    transaction = Transaction(
-        ticket_id=ticket.id,
-        amount=amount,
-        status="pending",
+    transaction = (
+        db.query(Transaction)
+        .filter(Transaction.ticket_id == ticket.id)
+        .with_for_update()
+        .first()
     )
-    db.add(transaction)
-    db.commit()
+    if transaction is None:
+        transaction = Transaction(
+            ticket_id=ticket.id,
+            amount=amount,
+            status="pending",
+        )
+        db.add(transaction)
+    elif transaction.status == "success":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transaksi tiket sudah berhasil",
+        )
+    else:
+        transaction.amount = amount
+        if transaction.status in {"failed", "expired"}:
+            transaction.status = "pending"
+
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        transaction = (
+            db.query(Transaction)
+            .filter(Transaction.ticket_id == ticket.id)
+            .first()
+        )
+        if transaction is None:
+            raise
     db.refresh(transaction)
 
-    # Call Midtrans (placeholder)
-    midtrans_response = create_snap_transaction(
-        order_id=transaction.id,
-        amount=amount,
-        customer_name=current_user.full_name,
-        customer_email=current_user.email,
-    )
+    try:
+        midtrans_response = create_snap_transaction(
+            order_id=transaction.id,
+            amount=amount,
+            customer_name=current_user.full_name,
+            customer_email=current_user.email,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=str(exc),
+        )
 
     return {
         "transaction_id": transaction.id,
@@ -93,7 +126,7 @@ async def payment_webhook(
     # In dev mode (no server key), unsigned webhooks are allowed for testing.
     from app.config import get_settings
     _settings = get_settings()
-    has_server_key = bool(_settings.MIDTRANS_SERVER_KEY)
+    has_server_key = bool(_settings.MIDTRANS_SERVER_KEY) and not _settings.MIDTRANS_SERVER_KEY.startswith("your_")
 
     if payload.signature_key:
         if not payload.status_code or not payload.gross_amount:
