@@ -5,8 +5,10 @@ T1 Mitigation: When a user logs out, their token is added to a Redis blacklist
 so it cannot be reused, even if it hasn't expired yet.
 """
 
-import redis
+import hashlib
 from typing import Optional
+
+import redis
 import logging
 
 from app.config import get_settings
@@ -16,6 +18,11 @@ logger = logging.getLogger(__name__)
 
 # Redis connection (lazy init)
 _redis_client: Optional[redis.Redis] = None
+
+
+def _blacklist_key(token: str) -> str:
+    token_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return f"blacklist:{token_hash}"
 
 
 def _get_redis() -> Optional[redis.Redis]:
@@ -53,7 +60,7 @@ def blacklist_token(token: str, ttl_seconds: int = 1800) -> bool:
 
     try:
         # Store with prefix for namespace isolation
-        client.setex(f"blacklist:{token}", ttl_seconds, "revoked")
+        client.setex(_blacklist_key(token), ttl_seconds, "revoked")
         return True
     except redis.RedisError as exc:
         logger.warning("Token blacklist write failed: %s", exc)
@@ -72,7 +79,7 @@ def is_token_blacklisted(token: str) -> bool:
         return settings.TOKEN_BLACKLIST_FAIL_CLOSED
 
     try:
-        return client.exists(f"blacklist:{token}") > 0
+        return client.exists(_blacklist_key(token)) > 0
     except redis.RedisError as exc:
         logger.warning("Token blacklist lookup failed: %s", exc)
         return settings.TOKEN_BLACKLIST_FAIL_CLOSED
