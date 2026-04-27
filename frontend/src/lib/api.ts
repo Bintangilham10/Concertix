@@ -1,7 +1,10 @@
 import type { AuthResponse, User, AdminStats, AdminTransactionsResponse, AdminUsersResponse, Concert, ConcertPayload } from "@/types";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "https://concertix-production.up.railway.app"
+)
+  .replace(/^http:\/\/concertix-production\.up\.railway\.app/i, "https://concertix-production.up.railway.app")
+  .replace(/\/$/, "");
 
 /**
  * Base fetch wrapper with auth header injection.
@@ -90,7 +93,7 @@ export async function logoutApi(): Promise<void> {
 // ── Concerts API ──
 
 export async function getConcerts(page = 1, perPage = 10) {
-  return fetchApi(`/concerts?page=${page}&per_page=${perPage}`);
+  return fetchApi(`/concerts/?page=${page}&per_page=${perPage}`);
 }
 
 export async function getConcertById(id: string) {

@@ -5,7 +5,11 @@ import { useRouter } from "next/navigation";
 import { getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL || "https://concertix-production.up.railway.app"
+)
+  .replace(/^http:\/\/concertix-production\.up\.railway\.app/i, "https://concertix-production.up.railway.app")
+  .replace(/\/$/, "");
 
 interface TicketItem {
   id: string;
