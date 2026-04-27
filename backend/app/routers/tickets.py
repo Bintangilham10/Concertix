@@ -35,6 +35,21 @@ async def order_ticket(
             detail="Konser tidak ditemukan",
         )
 
+    existing_ticket = (
+        db.query(Ticket)
+        .filter(
+            Ticket.user_id == current_user.id,
+            Ticket.concert_id == order.concert_id,
+            Ticket.status.in_(["pending", "paid", "used"]),
+        )
+        .first()
+    )
+    if existing_ticket:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Setiap user hanya dapat memesan 1 tiket untuk konser ini",
+        )
+
     # Check ticket availability
     if concert.available_tickets < order.quantity:
         raise HTTPException(

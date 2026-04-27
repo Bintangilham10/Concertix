@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from pydantic import Field
 from typing import Optional
 from datetime import datetime
 
@@ -7,7 +8,7 @@ from app.schemas.concert import ConcertResponse
 
 class TicketOrderRequest(BaseModel):
     concert_id: str
-    quantity: int = 1
+    quantity: int = Field(default=1, ge=1, le=1)
 
 
 class TicketResponse(BaseModel):
