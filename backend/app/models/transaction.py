@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, Float, ForeignKey, Enum as SAEnum, DateTime, func
+from sqlalchemy import Column, String, Float, ForeignKey, Enum as SAEnum, DateTime, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -7,6 +7,9 @@ from app.database import Base
 
 class Transaction(Base):
     __tablename__ = "transactions"
+    __table_args__ = (
+        UniqueConstraint("ticket_id", name="uq_transactions_ticket_id"),
+    )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     ticket_id = Column(String, ForeignKey("tickets.id"), nullable=False)
