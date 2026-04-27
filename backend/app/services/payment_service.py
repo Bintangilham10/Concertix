@@ -75,7 +75,7 @@ def create_snap_transaction(
             "email": customer_email,
         },
         "callbacks": {
-            "finish": f"{settings.CORS_ALLOWED_ORIGIN}/my-tickets",
+            "finish": f"{settings.CORS_ALLOWED_ORIGIN}/dashboard/my-tickets",
         },
     }
 
