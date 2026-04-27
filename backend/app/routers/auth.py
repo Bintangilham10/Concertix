@@ -13,8 +13,9 @@ from app.services.auth_service import (
     create_access_token,
     create_refresh_token,
     decode_token,
+    get_token_ttl_seconds,
 )
-from app.services.token_blacklist import blacklist_token
+from app.services.token_blacklist import blacklist_token, is_token_blacklisted
 
 router = APIRouter()
 security = HTTPBearer()
@@ -78,7 +79,9 @@ async def login(request: Request, credentials: UserLogin, db: Session = Depends(
 
 
 @router.post("/logout")
+@limiter.limit("10/minute")
 async def logout(
+    request: Request,
     credentials: HTTPAuthorizationCredentials = Depends(security),
     current_user: User = Depends(get_current_user),
 ):
@@ -89,7 +92,9 @@ async def logout(
     reused even if it hasn't expired yet.
     """
     token = credentials.credentials
-    success = blacklist_token(token, ttl_seconds=1800)  # 30 min = JWT expiry
+    payload = decode_token(token) or {}
+    ttl_seconds = get_token_ttl_seconds(payload)
+    success = blacklist_token(token, ttl_seconds=ttl_seconds) if ttl_seconds > 0 else False
 
     return {
         "message": "Logout berhasil",
@@ -109,9 +114,20 @@ async def get_current_user_info(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(request: TokenRefreshRequest, db: Session = Depends(get_db)):
+@limiter.limit("10/minute")
+async def refresh(
+    refresh_data: TokenRefreshRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
     """Refresh access token using a valid refresh token."""
-    payload = decode_token(request.refresh_token)
+    if is_token_blacklisted(refresh_data.refresh_token):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token sudah digunakan. Silakan login ulang.",
+        )
+
+    payload = decode_token(refresh_data.refresh_token)
     if payload is None or payload.get("type") != "refresh":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -129,6 +145,10 @@ async def refresh(request: TokenRefreshRequest, db: Session = Depends(get_db)):
     token_data = {"sub": user.id}
     access_token = create_access_token(token_data)
     new_refresh_token = create_refresh_token(token_data)
+
+    ttl_seconds = get_token_ttl_seconds(payload)
+    if ttl_seconds > 0:
+        blacklist_token(refresh_data.refresh_token, ttl_seconds=ttl_seconds)
 
     return TokenResponse(
         access_token=access_token,

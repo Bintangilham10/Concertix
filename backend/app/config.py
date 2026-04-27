@@ -1,7 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 import logging
-import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +32,7 @@ class Settings(BaseSettings):
 
     # Redis (for token blacklist, caching)
     REDIS_URL: str = "redis://redis:6379/0"
+    TOKEN_BLACKLIST_FAIL_CLOSED: bool = False
 
     class Config:
         env_file = ".env"
@@ -59,6 +59,23 @@ def get_settings() -> Settings:
                 "JWT_SECRET_KEY must be set to a strong, unique value in production. "
                 "Update your .env file."
             )
+
+    if not settings.DEBUG and not settings.CORS_ALLOWED_ORIGIN:
+        raise ValueError(
+            "CORS_ALLOWED_ORIGIN must be set in production, for example "
+            "https://concertix.vercel.app."
+        )
+
+    if settings.MIDTRANS_IS_PRODUCTION and (
+        not settings.MIDTRANS_SERVER_KEY
+        or settings.MIDTRANS_SERVER_KEY.startswith("your_")
+        or not settings.MIDTRANS_CLIENT_KEY
+        or settings.MIDTRANS_CLIENT_KEY.startswith("your_")
+    ):
+        raise ValueError(
+            "MIDTRANS_SERVER_KEY and MIDTRANS_CLIENT_KEY must be set before enabling "
+            "MIDTRANS_IS_PRODUCTION."
+        )
 
     return settings
 
