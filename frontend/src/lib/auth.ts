@@ -26,8 +26,10 @@ export function cacheUser(user: User): void {
  * Store auth tokens and user profile from backend JWT response.
  */
 function persistAuth(auth: AuthResponse): User {
-  localStorage.setItem("access_token", auth.access_token);
-  localStorage.setItem("refresh_token", auth.refresh_token);
+  localStorage.removeItem("access_token");
+  localStorage.removeItem("refresh_token");
+  sessionStorage.setItem("access_token", auth.access_token);
+  sessionStorage.setItem("refresh_token", auth.refresh_token);
   cacheUser(auth.user);
   return auth.user;
 }
@@ -60,7 +62,7 @@ export async function registerWithJwt(
  */
 export async function getCurrentUser(): Promise<User | null> {
   if (typeof window === "undefined") return null;
-  const token = localStorage.getItem("access_token");
+  const token = sessionStorage.getItem("access_token");
   if (!token) return null;
 
   try {
@@ -88,4 +90,6 @@ export function clearCache(): void {
   localStorage.removeItem("concertix_user");
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  sessionStorage.removeItem("access_token");
+  sessionStorage.removeItem("refresh_token");
 }
