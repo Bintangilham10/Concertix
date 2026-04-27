@@ -11,16 +11,20 @@ app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="API untuk platform pembelian tiket konser Concertix",
-    docs_url="/docs",
-    redoc_url="/redoc",
+    docs_url="/docs" if settings.DEBUG or settings.EXPOSE_API_DOCS else None,
+    redoc_url="/redoc" if settings.DEBUG or settings.EXPOSE_API_DOCS else None,
+    openapi_url="/openapi.json" if settings.DEBUG or settings.EXPOSE_API_DOCS else None,
 )
 
 # ── T7 Mitigation: Strict CORS ──────────────────────────────────────────────
 # In production, replace with actual domain(s)
-ALLOWED_ORIGINS = [
-    "http://localhost:3000",       # Next.js dev
-    "http://concertix-frontend:3000",  # Docker internal
-]
+ALLOWED_ORIGINS = []
+
+if settings.DEBUG:
+    ALLOWED_ORIGINS.extend([
+        "http://localhost:3000",
+        "http://concertix-frontend:3000",
+    ])
 
 # Read production origin from env if set
 if hasattr(settings, "CORS_ALLOWED_ORIGIN") and settings.CORS_ALLOWED_ORIGIN:
@@ -43,7 +47,8 @@ setup_rate_limiter(app)
 try:
     from prometheus_fastapi_instrumentator import Instrumentator
 
-    Instrumentator().instrument(app).expose(app, endpoint="/metrics")
+    if settings.DEBUG or settings.EXPOSE_METRICS:
+        Instrumentator().instrument(app).expose(app, endpoint="/metrics")
 except ImportError:
     pass  # prometheus_fastapi_instrumentator not installed yet
 
