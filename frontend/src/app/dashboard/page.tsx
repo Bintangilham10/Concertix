@@ -25,7 +25,7 @@ export default function DashboardTickets() {
   const [modalType, setModalType] = useState("VIP");
   const [modalPriceStr, setModalPriceStr] = useState("Rp 1.000");
   const [currentPrice, setCurrentPrice] = useState(1000);
-  const [qty, setQty] = useState(1);
+  const qty = 1;
 
   // Form state
   const [buyerName, setBuyerName] = useState("");
@@ -66,7 +66,6 @@ export default function DashboardTickets() {
     setModalType(type);
     setModalPriceStr(priceStr);
     setCurrentPrice(price);
-    setQty(1);
     setBuyerName("");
     setBuyerEmail("");
     setBuyerPhone("");
@@ -89,10 +88,6 @@ export default function DashboardTickets() {
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
   }, [closeModal]);
-
-  const changeQty = (delta: number) => {
-    setQty((prev) => Math.max(1, Math.min(2, prev + delta)));
-  };
 
   const handleCheckout = async () => {
     const user = await getCurrentUser();
@@ -216,11 +211,7 @@ export default function DashboardTickets() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px dashed rgba(255,255,255,0.1)", paddingTop: 16 }}>
                   <span style={{ color: "#9ca3af", fontSize: 13 }}>Jumlah</span>
-                  <div style={{ display: "flex", alignItems: "center", gap: 16, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: 4 }}>
-                    <button type="button" onClick={() => changeQty(-1)} aria-label="Kurangi jumlah" style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer" }}>-</button>
-                    <span style={{ fontWeight: 600, width: 20, textAlign: "center" }}>{qty}</span>
-                    <button type="button" onClick={() => changeQty(1)} aria-label="Tambah jumlah" style={{ width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(255,255,255,0.05)", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer" }}>+</button>
-                  </div>
+                  <span style={{ fontWeight: 600 }}>1 tiket per akun</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.05)" }}>
                   <span style={{ fontWeight: 600 }}>Total Pembayaran</span>

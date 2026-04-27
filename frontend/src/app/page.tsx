@@ -163,7 +163,7 @@ export default function Home() {
   const [modalType, setModalType] = useState("VIP");
   const [modalPriceStr, setModalPriceStr] = useState("Rp 1.250.000");
   const [currentPrice, setCurrentPrice] = useState(1250000);
-  const [qty, setQty] = useState(1);
+  const qty = 1;
 
   // Form state
   const [buyerName, setBuyerName] = useState("");
@@ -218,7 +218,6 @@ export default function Home() {
       setModalType(type);
       setModalPriceStr(priceStr);
       setCurrentPrice(price);
-      setQty(1);
       setBuyerName("");
       setBuyerEmail("");
       setBuyerPhone("");
@@ -249,10 +248,6 @@ export default function Home() {
   }, [closeModal]);
 
   // ── Quantity ───────────────────────────────────────────────────
-  const changeQty = (delta: number) => {
-    setQty((prev) => Math.max(1, Math.min(2, prev + delta)));
-  };
-
   // ── Checkout ───────────────────────────────────────────────────
   const handleCheckout = async () => {
     // Check if user is logged in
