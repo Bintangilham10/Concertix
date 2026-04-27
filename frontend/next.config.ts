@@ -22,10 +22,11 @@ const contentSecurityPolicy = [
   `connect-src 'self' ${apiOrigin} https://app.sandbox.midtrans.com https://api.sandbox.midtrans.com https://app.midtrans.com https://api.midtrans.com`,
   "frame-src https://app.sandbox.midtrans.com https://app.midtrans.com",
   "form-action 'self' https://app.sandbox.midtrans.com https://app.midtrans.com",
-  "upgrade-insecure-requests",
+  ...(apiOrigin.startsWith("https://") ? ["upgrade-insecure-requests"] : []),
 ].join("; ");
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   turbopack: {
     root: __dirname,
   },
