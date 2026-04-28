@@ -1,32 +1,53 @@
 """add ticket and transaction uniqueness constraints
 
-Revision ID: 002_add_ticket_transaction_constraints
+Revision ID: 002_add_constraints
 Revises: 001_add_blockchain
 Create Date: 2026-04-27
 """
 
 from alembic import op
+import sqlalchemy as sa
 
 
-revision = "002_add_ticket_transaction_constraints"
+revision = "002_add_constraints"
 down_revision = "001_add_blockchain"
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
-    op.create_unique_constraint(
-        "uq_tickets_user_concert",
-        "tickets",
-        ["user_id", "concert_id"],
-    )
-    op.create_unique_constraint(
-        "uq_transactions_ticket_id",
-        "transactions",
-        ["ticket_id"],
-    )
+    inspector = sa.inspect(op.get_bind())
+    ticket_constraints = {
+        constraint["name"] for constraint in inspector.get_unique_constraints("tickets")
+    }
+    transaction_constraints = {
+        constraint["name"] for constraint in inspector.get_unique_constraints("transactions")
+    }
+
+    if "uq_tickets_user_concert" not in ticket_constraints:
+        op.create_unique_constraint(
+            "uq_tickets_user_concert",
+            "tickets",
+            ["user_id", "concert_id"],
+        )
+    if "uq_transactions_ticket_id" not in transaction_constraints:
+        op.create_unique_constraint(
+            "uq_transactions_ticket_id",
+            "transactions",
+            ["ticket_id"],
+        )
 
 
 def downgrade() -> None:
-    op.drop_constraint("uq_transactions_ticket_id", "transactions", type_="unique")
-    op.drop_constraint("uq_tickets_user_concert", "tickets", type_="unique")
+    inspector = sa.inspect(op.get_bind())
+    ticket_constraints = {
+        constraint["name"] for constraint in inspector.get_unique_constraints("tickets")
+    }
+    transaction_constraints = {
+        constraint["name"] for constraint in inspector.get_unique_constraints("transactions")
+    }
+
+    if "uq_transactions_ticket_id" in transaction_constraints:
+        op.drop_constraint("uq_transactions_ticket_id", "transactions", type_="unique")
+    if "uq_tickets_user_concert" in ticket_constraints:
+        op.drop_constraint("uq_tickets_user_concert", "tickets", type_="unique")
