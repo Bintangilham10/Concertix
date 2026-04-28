@@ -3,27 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import jsQR from "jsqr";
 import { clearCache, getCurrentUser, logoutJwt } from "@/lib/auth";
 import { getAdminTicketScan, validateTicket } from "@/lib/api";
 import type { AdminTicketScanResult, User } from "@/types";
-
-type BarcodeResult = {
-  rawValue?: string;
-};
-
-type BarcodeDetectorInstance = {
-  detect(source: HTMLVideoElement): Promise<BarcodeResult[]>;
-};
-
-type BarcodeDetectorConstructor = new (options?: {
-  formats?: string[];
-}) => BarcodeDetectorInstance;
-
-declare global {
-  interface Window {
-    BarcodeDetector?: BarcodeDetectorConstructor;
-  }
-}
 
 const navItems = [
   { href: "/admin", label: "Dashboard", active: false },
@@ -56,6 +39,7 @@ function statusStyle(status: string) {
 export default function AdminScanTicketPage() {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const scanTimerRef = useRef<number | null>(null);
 
@@ -138,20 +122,28 @@ export default function AdminScanTicketPage() {
         await video.play();
         setCameraReady(true);
 
-        const Detector = window.BarcodeDetector;
-        if (!Detector) {
-          setScannerError("Browser belum mendukung scanner QR otomatis.");
-          return;
-        }
-
-        const detector = new Detector({ formats: ["qr_code"] });
         const scanFrame = async () => {
-          if (cancelled || !videoRef.current) return;
+          if (cancelled || !videoRef.current || !canvasRef.current) return;
           try {
-            const codes = await detector.detect(videoRef.current);
-            const rawValue = codes[0]?.rawValue;
-            if (rawValue) {
-              const ticketId = parseTicketCode(rawValue);
+            const currentVideo = videoRef.current;
+            const canvas = canvasRef.current;
+            const width = currentVideo.videoWidth;
+            const height = currentVideo.videoHeight;
+
+            if (width > 0 && height > 0 && currentVideo.readyState >= currentVideo.HAVE_CURRENT_DATA) {
+              canvas.width = width;
+              canvas.height = height;
+              const context = canvas.getContext("2d", { willReadFrequently: true });
+              context?.drawImage(currentVideo, 0, 0, width, height);
+              const imageData = context?.getImageData(0, 0, width, height);
+              const code = imageData ? jsQR(imageData.data, width, height) : null;
+
+              if (!code?.data) {
+                scanTimerRef.current = window.setTimeout(scanFrame, 250);
+                return;
+              }
+
+              const ticketId = parseTicketCode(code.data);
               stopCamera();
               await loadTicket(ticketId);
               return;
@@ -203,8 +195,8 @@ export default function AdminScanTicketPage() {
     setScannerError(null);
     setError(null);
 
-    if (!window.BarcodeDetector) {
-      setScannerError("Scanner kamera belum didukung browser ini. Gunakan input manual.");
+    if (!window.isSecureContext && window.location.hostname !== "localhost") {
+      setScannerError("Kamera hanya bisa dibuka dari HTTPS atau localhost.");
       return;
     }
     if (!navigator.mediaDevices?.getUserMedia) {
@@ -374,6 +366,7 @@ export default function AdminScanTicketPage() {
             {scannerActive && (
               <div style={{ marginTop: 16, borderRadius: 12, overflow: "hidden", border: "1px solid rgba(255,255,255,0.08)", background: "#050510", aspectRatio: "4 / 3", position: "relative" }}>
                 <video ref={videoRef} muted playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <canvas ref={canvasRef} style={{ display: "none" }} />
                 {!cameraReady && (
                   <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: "#9ca3af", fontSize: 13 }}>
                     Membuka kamera...
