@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
     # Database
-    DATABASE_URL: str = "postgresql://concertix_user:concertix_pass@localhost:5432/concertix"
+    DATABASE_URL: str
 
     # JWT
     JWT_SECRET_KEY: str = "change-this-to-a-secure-secret-key"
