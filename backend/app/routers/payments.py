@@ -1,5 +1,6 @@
 from decimal import Decimal, InvalidOperation
 import logging
+import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.exc import IntegrityError
@@ -76,7 +77,11 @@ async def create_payment(
     else:
         transaction.amount = amount
         if transaction.status in {"failed", "expired"}:
+            # Midtrans order_id cannot be reused after a previous payment attempt.
+            transaction.id = str(uuid.uuid4())
             transaction.status = "pending"
+            transaction.midtrans_transaction_id = None
+            transaction.payment_type = None
 
     try:
         db.commit()
@@ -153,10 +158,11 @@ async def payment_webhook(
     # Find transaction
     transaction = db.query(Transaction).filter(Transaction.id == payload.order_id).first()
     if not transaction:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Transaksi tidak ditemukan",
+        logger.warning(
+            "Ignoring Midtrans webhook for unknown or superseded order_id %s",
+            payload.order_id,
         )
+        return {"status": "ok", "ignored": True, "reason": "transaction_not_found"}
 
     if transaction.ticket and transaction.ticket.status == "cancelled":
         logger.info(
