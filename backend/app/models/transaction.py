@@ -26,3 +26,4 @@ class Transaction(Base):
 
     # Relationships
     ticket = relationship("Ticket", back_populates="transaction")
+    payment_attempts = relationship("PaymentAttempt", back_populates="transaction")

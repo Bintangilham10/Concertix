@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.ticket import Ticket
 from app.models.concert import Concert
+from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
 from app.schemas.ticket import TicketOrderRequest, TicketResponse
 from app.middleware.auth_middleware import get_current_user
@@ -147,6 +148,17 @@ async def cancel_pending_ticket(
 
     if ticket.transaction and ticket.transaction.status == "pending":
         ticket.transaction.status = "expired"
+        (
+            db.query(PaymentAttempt)
+            .filter(
+                PaymentAttempt.transaction_id == ticket.transaction.id,
+                PaymentAttempt.status == "pending",
+            )
+            .update(
+                {"status": "expired", "is_current": False},
+                synchronize_session=False,
+            )
+        )
 
     ticket.status = "cancelled"
     db.commit()
