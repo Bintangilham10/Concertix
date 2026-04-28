@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { cancelTicket, createPayment, getMyTickets } from "@/lib/api";
+import { cancelTicket, getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
-import { startMidtransPayment } from "@/lib/midtrans";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "https://concertix-production.up.railway.app"
@@ -41,7 +40,6 @@ export default function MyTicketsPage() {
   const [notice, setNotice] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
-  const [payingId, setPayingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -120,43 +118,6 @@ export default function MyTicketsPage() {
       setError(err instanceof Error ? err.message : "Gagal membatalkan tiket");
     } finally {
       setCancellingId(null);
-    }
-  };
-
-  const handleContinuePayment = async (ticketId: string) => {
-    setPayingId(ticketId);
-    setError(null);
-    setNotice(null);
-
-    try {
-      const paymentResult = await createPayment(ticketId) as {
-        redirect_url: string;
-        snap_token: string;
-      };
-
-      await startMidtransPayment({
-        snapToken: paymentResult.snap_token,
-        redirectUrl: paymentResult.redirect_url,
-        onSuccess: () => {
-          setNotice("Pembayaran berhasil. Jika status belum berubah, tunggu webhook Midtrans lalu refresh halaman.");
-        },
-        onPending: () => {
-          setNotice("Pembayaran sedang diproses. Cek status tiket ini lagi setelah pembayaran selesai.");
-        },
-        onError: () => {
-          setError("Pembayaran gagal. Silakan coba lanjut bayar lagi.");
-        },
-        onClose: () => {
-          setNotice("Popup pembayaran ditutup. Tiket tetap pending dan masih bisa dilanjutkan dari tombol Lanjut Bayar.");
-        },
-        onFallback: () => {
-          setNotice("Pembayaran dibuka di tab baru. Selesaikan pembayaran, lalu kembali ke halaman ini.");
-        },
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Gagal membuka pembayaran");
-    } finally {
-      setPayingId(null);
     }
   };
 
@@ -251,14 +212,9 @@ export default function MyTicketsPage() {
                       </button>
                     )}
                     {ticket.status === "pending" && (
-                      <>
-                        <button disabled={payingId === ticket.id || cancellingId === ticket.id} onClick={() => handleContinuePayment(ticket.id)} style={{ padding: "10px 16px", background: "linear-gradient(135deg, #7c3aed, #ec4899)", borderRadius: 10, color: "#fff", fontWeight: 600, fontSize: 13, border: "none", cursor: payingId === ticket.id ? "wait" : "pointer", opacity: payingId === ticket.id || cancellingId === ticket.id ? 0.7 : 1 }}>
-                          {payingId === ticket.id ? "Membuka..." : "Lanjut Bayar"}
-                        </button>
-                        <button disabled={cancellingId === ticket.id || payingId === ticket.id} onClick={() => handleCancelTicket(ticket.id)} style={{ padding: "10px 16px", background: "rgba(248,113,113,0.12)", borderRadius: 10, color: "#fca5a5", fontWeight: 600, fontSize: 13, border: "1px solid rgba(248,113,113,0.35)", cursor: cancellingId === ticket.id ? "wait" : "pointer", opacity: cancellingId === ticket.id || payingId === ticket.id ? 0.7 : 1 }}>
-                          {cancellingId === ticket.id ? "Membatalkan..." : "Batalkan"}
-                        </button>
-                      </>
+                      <button disabled={cancellingId === ticket.id} onClick={() => handleCancelTicket(ticket.id)} style={{ padding: "10px 16px", background: "rgba(248,113,113,0.12)", borderRadius: 10, color: "#fca5a5", fontWeight: 600, fontSize: 13, border: "1px solid rgba(248,113,113,0.35)", cursor: cancellingId === ticket.id ? "wait" : "pointer", opacity: cancellingId === ticket.id ? 0.7 : 1 }}>
+                        {cancellingId === ticket.id ? "Membatalkan..." : "Batalkan"}
+                      </button>
                     )}
                     {ticket.status === "cancelled" && (
                       <a href="/dashboard" style={{ padding: "10px 16px", background: "rgba(124,58,237,0.16)", borderRadius: 10, color: "#c4b5fd", fontWeight: 600, fontSize: 13, textDecoration: "none", border: "1px solid rgba(167,139,250,0.32)" }}>
