@@ -2,11 +2,11 @@ import { getMe, login, logoutApi, register } from "./api";
 import type { AuthResponse, User } from "@/types";
 
 /**
- * Get cached user from localStorage.
+ * Get cached user from sessionStorage.
  */
 export function getStoredUser(): User | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("concertix_user");
+  const raw = sessionStorage.getItem("concertix_user");
   if (!raw) return null;
   try {
     return JSON.parse(raw) as User;
@@ -16,10 +16,11 @@ export function getStoredUser(): User | null {
 }
 
 /**
- * Cache user profile in localStorage.
+ * Cache user profile for the current browser tab only.
  */
 export function cacheUser(user: User): void {
-  localStorage.setItem("concertix_user", JSON.stringify(user));
+  localStorage.removeItem("concertix_user");
+  sessionStorage.setItem("concertix_user", JSON.stringify(user));
 }
 
 /**
@@ -28,6 +29,7 @@ export function cacheUser(user: User): void {
 function persistAuth(auth: AuthResponse): User {
   localStorage.removeItem("access_token");
   localStorage.removeItem("refresh_token");
+  localStorage.removeItem("concertix_user");
   sessionStorage.setItem("access_token", auth.access_token);
   sessionStorage.setItem("refresh_token", auth.refresh_token);
   cacheUser(auth.user);
@@ -92,4 +94,5 @@ export function clearCache(): void {
   localStorage.removeItem("refresh_token");
   sessionStorage.removeItem("access_token");
   sessionStorage.removeItem("refresh_token");
+  sessionStorage.removeItem("concertix_user");
 }
