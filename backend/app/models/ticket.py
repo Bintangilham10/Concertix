@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Column, String, ForeignKey, Enum as SAEnum, DateTime, UniqueConstraint, func
+from sqlalchemy import Column, String, ForeignKey, Enum as SAEnum, DateTime, Index, func, text
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -8,7 +8,13 @@ from app.database import Base
 class Ticket(Base):
     __tablename__ = "tickets"
     __table_args__ = (
-        UniqueConstraint("user_id", "concert_id", name="uq_tickets_user_concert"),
+        Index(
+            "uq_tickets_user_concert_active",
+            "user_id",
+            "concert_id",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'paid', 'used')"),
+        ),
     )
 
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
