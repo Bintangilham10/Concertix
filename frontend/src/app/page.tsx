@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getCurrentUser, logoutJwt, clearCache } from "@/lib/auth";
 import { orderTicket, createPayment } from "@/lib/api";
+import { startMidtransPayment } from "@/lib/midtrans";
 import type { User } from "@/types";
 
 // ── Concert IDs (from database) ────────────────────────────────────
@@ -286,14 +287,44 @@ export default function Home() {
       // Step 2: Create payment via Midtrans
       const paymentResult = await createPayment(ticketId) as { redirect_url: string; snap_token: string };
 
-      setCheckoutText("✓ Dialihkan ke Midtrans...");
+      setCheckoutText("Membuka pembayaran...");
       setCheckoutStyle({ background: "linear-gradient(135deg, #10B981, #059669)" });
-      showToast("🎉", "Pembayaran Dibuat!", "Kamu akan diarahkan ke halaman Midtrans.", 4000);
+      showToast("🎉", "Pembayaran Dibuat!", "Popup Midtrans akan terbuka.", 4000);
 
-      // Step 3: Redirect to Midtrans payment page
-      setTimeout(() => {
-        window.location.href = paymentResult.redirect_url;
-      }, 1500);
+      // Step 3: Open Midtrans Snap popup without leaving this tab.
+      await startMidtransPayment({
+        snapToken: paymentResult.snap_token,
+        redirectUrl: paymentResult.redirect_url,
+        onSuccess: () => {
+          setModalOpen(false);
+          showToast("🎉", "Pembayaran Berhasil", "Mengarahkan ke Tiket Saya.", 4000);
+          window.location.href = "/dashboard/my-tickets";
+        },
+        onPending: () => {
+          setModalOpen(false);
+          showToast("⏳", "Pembayaran Diproses", "Cek status tiket di Tiket Saya.", 4000);
+          window.location.href = "/dashboard/my-tickets";
+        },
+        onError: () => {
+          showToast("❌", "Pembayaran Gagal", "Silakan coba lagi dari Tiket Saya.", 5000);
+          setCheckoutText("Lanjut ke Pembayaran →");
+          setCheckoutDisabled(false);
+          setCheckoutStyle({});
+        },
+        onClose: () => {
+          showToast("ℹ", "Pembayaran Ditutup", "Pesanan sudah dibuat. Lanjutkan pembayaran dari tab ini bila diperlukan.", 5000);
+          setCheckoutText("Lanjut ke Pembayaran →");
+          setCheckoutDisabled(false);
+          setCheckoutStyle({});
+        },
+        onFallback: () => {
+          setModalOpen(false);
+          showToast("ℹ", "Pembayaran Dibuka di Tab Baru", "Selesaikan pembayaran, lalu kembali ke tab Concertix ini.", 6000);
+          setCheckoutText("Lanjut ke Pembayaran →");
+          setCheckoutDisabled(false);
+          setCheckoutStyle({});
+        },
+      });
 
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal memproses pesanan";
