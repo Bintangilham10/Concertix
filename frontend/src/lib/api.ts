@@ -27,7 +27,7 @@ function formatFieldName(field: string): string {
     email: "Email",
     full_name: "Nama lengkap",
     password: "Kata Sandi", // NOSONAR
-    confirm_password: "Konfirmasi kata sandi",
+    confirm_password: "Konfirmasi kata sandi", // NOSONAR
   };
   return labels[field] || field;
 }
