@@ -172,3 +172,54 @@ export interface AdminUsersResponse {
   per_page: number;
   total_pages: number;
 }
+
+export interface AdminTicketScanBuyer {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+export interface AdminTicketScanConcert {
+  id: string;
+  name: string;
+  artist: string;
+  venue: string;
+  date: string | null;
+  time: string | null;
+  price: number;
+}
+
+export interface AdminTicketScanBlock {
+  index: number;
+  timestamp: string | null;
+  action: string;
+  hash: string;
+}
+
+export interface AdminTicketScanResult {
+  id: string;
+  status: Ticket["status"];
+  created_at: string | null;
+  buyer: AdminTicketScanBuyer;
+  concert: AdminTicketScanConcert;
+  blockchain_verified: boolean;
+  blockchain_used: boolean;
+  blockchain_records: number;
+  can_validate: boolean;
+  validation_message: string;
+  blocks: AdminTicketScanBlock[];
+}
+
+export interface BlockchainBlock {
+  id: string;
+  index: number;
+  timestamp: string | null;
+  ticket_id: string;
+  user_id: string;
+  concert_id: string;
+  action: string;
+  data_hash: string;
+  previous_hash: string;
+  hash: string;
+  nonce: number;
+}

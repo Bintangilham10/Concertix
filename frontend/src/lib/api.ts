@@ -1,4 +1,14 @@
-import type { AuthResponse, User, AdminStats, AdminTransactionsResponse, AdminUsersResponse, Concert, ConcertPayload } from "@/types";
+import type {
+  AuthResponse,
+  User,
+  AdminStats,
+  AdminTicketScanResult,
+  AdminTransactionsResponse,
+  AdminUsersResponse,
+  BlockchainBlock,
+  Concert,
+  ConcertPayload,
+} from "@/types";
 
 const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL || "https://concertix-production.up.railway.app"
@@ -240,4 +250,14 @@ export async function getAdminUsers(
   if (role) params.set("role", role);
   if (search) params.set("search", search);
   return fetchApi<AdminUsersResponse>(`/admin/users?${params}`);
+}
+
+export async function getAdminTicketScan(ticketId: string): Promise<AdminTicketScanResult> {
+  return fetchApi<AdminTicketScanResult>(`/admin/tickets/${ticketId}/scan`);
+}
+
+export async function validateTicket(ticketId: string): Promise<BlockchainBlock> {
+  return fetchApi<BlockchainBlock>(`/blockchain/ticket/${ticketId}/validate`, {
+    method: "POST",
+  });
 }

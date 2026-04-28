@@ -3,8 +3,8 @@ Admin API Router — Dashboard statistics and management endpoints.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from pydantic import BaseModel
 from datetime import datetime
@@ -15,6 +15,7 @@ from app.models.concert import Concert
 from app.models.ticket import Ticket
 from app.models.transaction import Transaction
 from app.middleware.rbac import require_role
+from app.services.blockchain_service import get_ticket_block, is_ticket_used
 
 
 router = APIRouter()
@@ -59,6 +60,46 @@ class AdminStatsResponse(BaseModel):
     total_users: int
     concerts: List[ConcertStat]
     recent_transactions: List[RecentTransaction]
+
+
+class AdminTicketScanBuyer(BaseModel):
+    id: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
+
+
+class AdminTicketScanConcert(BaseModel):
+    id: str
+    name: str
+    artist: str
+    venue: str
+    date: Optional[datetime] = None
+    time: Optional[str] = None
+    price: float
+
+
+class AdminTicketScanBlock(BaseModel):
+    index: int
+    timestamp: Optional[datetime] = None
+    action: str
+    hash: str
+
+    class Config:
+        from_attributes = True
+
+
+class AdminTicketScanResponse(BaseModel):
+    id: str
+    status: str
+    created_at: Optional[datetime] = None
+    buyer: AdminTicketScanBuyer
+    concert: AdminTicketScanConcert
+    blockchain_verified: bool
+    blockchain_used: bool
+    blockchain_records: int
+    can_validate: bool
+    validation_message: str
+    blocks: List[AdminTicketScanBlock]
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -147,6 +188,70 @@ async def get_admin_stats(
 
 
 # ── Admin Transactions List ──────────────────────────────────────────────────
+
+@router.get("/tickets/{ticket_id}/scan", response_model=AdminTicketScanResponse)
+async def scan_ticket_detail(
+    ticket_id: str,
+    admin: User = Depends(require_role("admin")),
+    db: Session = Depends(get_db),
+):
+    """Load ticket data for admin gate scan before validation."""
+    ticket = (
+        db.query(Ticket)
+        .options(joinedload(Ticket.user), joinedload(Ticket.concert))
+        .filter(Ticket.id == ticket_id)
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tiket tidak ditemukan",
+        )
+
+    blocks = get_ticket_block(db, ticket_id)
+    has_issued_block = any(block.action == "ISSUED" for block in blocks)
+    blockchain_used = is_ticket_used(db, ticket_id)
+    can_validate = ticket.status == "paid" and has_issued_block and not blockchain_used
+
+    if ticket.status == "used" or blockchain_used:
+        validation_message = "Tiket sudah dipakai dan tidak bisa diverifikasi ulang."
+    elif ticket.status == "paid" and can_validate:
+        validation_message = "Tiket valid, sudah lunas, dan siap diverifikasi masuk."
+    elif ticket.status == "paid":
+        validation_message = "Tiket sudah lunas, tetapi record ISSUED blockchain belum ditemukan."
+    elif ticket.status == "pending":
+        validation_message = "Tiket belum lunas. Jangan izinkan masuk."
+    elif ticket.status == "cancelled":
+        validation_message = "Tiket sudah dibatalkan. Jangan izinkan masuk."
+    else:
+        validation_message = "Status tiket belum dapat divalidasi."
+
+    return AdminTicketScanResponse(
+        id=ticket.id,
+        status=ticket.status,
+        created_at=ticket.created_at,
+        buyer=AdminTicketScanBuyer(
+            id=ticket.user.id,
+            full_name=ticket.user.full_name,
+            email=ticket.user.email,
+        ),
+        concert=AdminTicketScanConcert(
+            id=ticket.concert.id,
+            name=ticket.concert.name,
+            artist=ticket.concert.artist,
+            venue=ticket.concert.venue,
+            date=ticket.concert.date,
+            time=ticket.concert.time,
+            price=ticket.concert.price,
+        ),
+        blockchain_verified=len(blocks) > 0,
+        blockchain_used=blockchain_used,
+        blockchain_records=len(blocks),
+        can_validate=can_validate,
+        validation_message=validation_message,
+        blocks=[AdminTicketScanBlock.model_validate(block) for block in blocks],
+    )
+
 
 class AdminTransactionItem(BaseModel):
     id: str
