@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getMyTickets } from "@/lib/api";
+import { cancelTicket, getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 
 const API_BASE_URL = (
@@ -37,7 +37,9 @@ export default function MyTicketsPage() {
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -96,6 +98,29 @@ export default function MyTicketsPage() {
     }
   };
 
+  const handleCancelTicket = async (ticketId: string) => {
+    const confirmed = window.confirm(
+      "Batalkan tiket pending ini? Kuota akan dikembalikan dan kamu bisa memilih tiket lain.",
+    );
+    if (!confirmed) return;
+
+    setCancellingId(ticketId);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const updated = await cancelTicket(ticketId) as TicketItem;
+      setTickets((current) =>
+        current.map((ticket) => ticket.id === ticketId ? { ...ticket, status: updated.status } : ticket),
+      );
+      setNotice("Tiket pending berhasil dibatalkan. Kamu bisa memilih tiket lain di halaman Beli Tiket.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Gagal membatalkan tiket");
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
   const formatRupiah = (n: number) => "Rp " + n.toLocaleString("id-ID");
   const formatDate = (d: string) => {
     try {
@@ -128,6 +153,12 @@ export default function MyTicketsPage() {
           <div style={{ textAlign: "center", padding: "64px 0", color: "#f87171" }}>
             <div style={{ fontSize: 32, marginBottom: 12 }}>❌</div>
             {error}
+          </div>
+        )}
+
+        {notice && !error && (
+          <div style={{ marginBottom: 20, padding: "14px 16px", borderRadius: 10, background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#34d399", fontSize: 14, fontWeight: 600 }}>
+            {notice}
           </div>
         )}
 
@@ -179,6 +210,16 @@ export default function MyTicketsPage() {
                       <button disabled={downloadingId === ticket.id} onClick={() => handleDownloadPdf(ticket.id)} style={{ padding: "10px 16px", background: "linear-gradient(135deg, #7c3aed, #a855f7)", borderRadius: 10, color: "#fff", fontWeight: 600, fontSize: 13, border: "none", cursor: downloadingId === ticket.id ? "wait" : "pointer", opacity: downloadingId === ticket.id ? 0.7 : 1, display: "flex", alignItems: "center", gap: 6 }}>
                         📄 E-Ticket
                       </button>
+                    )}
+                    {ticket.status === "pending" && (
+                      <button disabled={cancellingId === ticket.id} onClick={() => handleCancelTicket(ticket.id)} style={{ padding: "10px 16px", background: "rgba(248,113,113,0.12)", borderRadius: 10, color: "#fca5a5", fontWeight: 600, fontSize: 13, border: "1px solid rgba(248,113,113,0.35)", cursor: cancellingId === ticket.id ? "wait" : "pointer", opacity: cancellingId === ticket.id ? 0.7 : 1 }}>
+                        {cancellingId === ticket.id ? "Membatalkan..." : "Batalkan"}
+                      </button>
+                    )}
+                    {ticket.status === "cancelled" && (
+                      <a href="/dashboard" style={{ padding: "10px 16px", background: "rgba(124,58,237,0.16)", borderRadius: 10, color: "#c4b5fd", fontWeight: 600, fontSize: 13, textDecoration: "none", border: "1px solid rgba(167,139,250,0.32)" }}>
+                        Pilih Tiket
+                      </a>
                     )}
                   </div>
                 </div>

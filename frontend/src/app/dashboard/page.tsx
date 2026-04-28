@@ -47,6 +47,7 @@ export default function DashboardTickets() {
   const [checkoutDisabled, setCheckoutDisabled] = useState(false);
   const [checkoutStyle, setCheckoutStyle] = useState<React.CSSProperties>({});
   const [orderedConcertIds, setOrderedConcertIds] = useState<string[]>([]);
+  const [activeTicketStatus, setActiveTicketStatus] = useState<string | null>(null);
 
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
@@ -70,16 +71,19 @@ export default function DashboardTickets() {
   );
 
   const hasExistingTicket = useCallback(
-    (type: string) => orderedConcertIds.includes(CONCERT_IDS[type]),
+    () => orderedConcertIds.length > 0,
     [orderedConcertIds],
   );
 
   const openModal = useCallback((type: string, priceStr: string, price: number) => {
-    if (hasExistingTicket(type)) {
+    if (hasExistingTicket()) {
+      const message = activeTicketStatus === "pending"
+        ? "Akun ini sudah memiliki tiket pending. Batalkan tiket pending di halaman Tiket Saya untuk memilih tiket lain."
+        : "Akun ini sudah memiliki tiket. Setiap akun hanya boleh memiliki 1 tiket.";
       showToast(
         "!",
         "Tidak Bisa Pesan Lagi",
-        "Akun ini sudah memiliki tiket untuk kategori tersebut. Setiap user hanya boleh memesan 1 tiket.",
+        message,
         5000,
       );
       return;
@@ -99,7 +103,7 @@ export default function DashboardTickets() {
     setCheckoutStyle({});
     setModalOpen(true);
     setTimeout(() => nameInputRef.current?.focus(), 100);
-  }, [hasExistingTicket, showToast]);
+  }, [activeTicketStatus, hasExistingTicket, showToast]);
 
   const closeModal = useCallback(() => setModalOpen(false), []);
 
@@ -118,15 +122,16 @@ export default function DashboardTickets() {
 
       const tickets = await getMyTickets() as UserTicketSummary[];
       const blockingStatuses = new Set(["pending", "paid", "used"]);
+      const activeTickets = tickets.filter((ticket) => blockingStatuses.has(ticket.status));
       setOrderedConcertIds(
-        tickets
-          .filter((ticket) => blockingStatuses.has(ticket.status))
-          .map((ticket) => ticket.concert_id),
+        activeTickets.map((ticket) => ticket.concert_id),
       );
+      setActiveTicketStatus(activeTickets[0]?.status ?? null);
     }
 
     loadExistingTickets().catch(() => {
       setOrderedConcertIds([]);
+      setActiveTicketStatus(null);
     });
   }, []);
 
@@ -163,6 +168,7 @@ export default function DashboardTickets() {
       const ticketResult = await orderTicket(concertId, qty) as { id: string } | { id: string }[];
       const ticketId = Array.isArray(ticketResult) ? ticketResult[0].id : ticketResult.id;
       setOrderedConcertIds((prev) => Array.from(new Set([...prev, concertId])));
+      setActiveTicketStatus("pending");
 
       setCheckoutText("Membuat Pembayaran...");
       const paymentResult = await createPayment(ticketId) as { redirect_url: string; snap_token: string };
@@ -222,8 +228,8 @@ export default function DashboardTickets() {
     }
   };
 
-  const vipAlreadyOrdered = hasExistingTicket("VIP");
-  const regularAlreadyOrdered = hasExistingTicket("Regular");
+  const vipAlreadyOrdered = hasExistingTicket();
+  const regularAlreadyOrdered = hasExistingTicket();
 
   return (
     <div>
@@ -234,7 +240,9 @@ export default function DashboardTickets() {
         </p>
         {orderedConcertIds.length > 0 && (
           <div style={{ marginTop: 16, padding: "12px 16px", borderRadius: 10, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.28)", color: "#fbbf24", fontSize: 14, fontWeight: 600 }}>
-            Akun ini sudah memiliki tiket. Pemesanan ulang untuk kategori yang sama tidak diperbolehkan.
+            {activeTicketStatus === "pending"
+              ? "Akun ini sudah memiliki tiket pending. Batalkan dulu di halaman Tiket Saya jika ingin memilih tiket lain."
+              : "Akun ini sudah memiliki tiket. Setiap akun hanya boleh memiliki 1 tiket."}
           </div>
         )}
       </div>

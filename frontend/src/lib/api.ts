@@ -133,6 +133,12 @@ export async function getMyTickets() {
   return fetchApi("/tickets/my-tickets");
 }
 
+export async function cancelTicket(ticketId: string) {
+  return fetchApi(`/tickets/${ticketId}/cancel`, {
+    method: "POST",
+  });
+}
+
 // ── Payments API ──
 
 export async function createPayment(ticketId: string) {
