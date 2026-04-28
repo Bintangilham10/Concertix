@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
 
     # JWT
-    JWT_SECRET_KEY: str = "change-this-to-a-secure-secret-key"
+    JWT_SECRET_KEY: str
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -54,10 +54,10 @@ def get_settings() -> Settings:
     settings = Settings()
 
     # T2: Validate JWT secret key is not default/insecure
-    if settings.JWT_SECRET_KEY in _INSECURE_SECRETS:
+    if settings.JWT_SECRET_KEY in _INSECURE_SECRETS or not _has_real_secret(settings.JWT_SECRET_KEY):
         if settings.DEBUG:
             logger.warning(
-                "⚠️  JWT_SECRET_KEY is using an INSECURE default value! "
+                "⚠️  JWT_SECRET_KEY is using an INSECURE placeholder/default value! "
                 "Set a strong secret in .env for production."
             )
         else:
