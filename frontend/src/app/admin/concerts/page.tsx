@@ -229,6 +229,7 @@ export default function AdminConcertsPage() {
               { href: "/admin/concerts", label: "Konser", active: true },
               { href: "/admin/transactions", label: "Transaksi", active: false },
               { href: "/admin/users", label: "Pengguna", active: false },
+              { href: "/admin/scan", label: "Scan Tiket", active: false },
             ].map((item) => (
               <a key={item.href} href={item.href} style={{
                 fontSize: 13, fontWeight: item.active ? 600 : 500, textDecoration: "none",
