@@ -53,6 +53,8 @@ services:
       EXPOSE_API_DOCS: ${EXPOSE_API_DOCS:-true}
       EXPOSE_METRICS: ${EXPOSE_METRICS:-true}
       TOKEN_BLACKLIST_FAIL_CLOSED: ${TOKEN_BLACKLIST_FAIL_CLOSED:-false}
+      RATE_LIMIT_STORAGE_URL: ${RATE_LIMIT_STORAGE_URL:-redis://redis:6379/0}
+      TRUST_PROXY_HEADERS: ${TRUST_PROXY_HEADERS:-false}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?JWT_SECRET_KEY is required. Copy .env.example to .env and set it.}
       CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:3000}
     ports:
