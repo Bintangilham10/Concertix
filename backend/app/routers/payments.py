@@ -158,6 +158,14 @@ async def payment_webhook(
             detail="Transaksi tidak ditemukan",
         )
 
+    if transaction.ticket and transaction.ticket.status == "cancelled":
+        logger.info(
+            "Ignoring Midtrans webhook for cancelled ticket %s on order %s",
+            transaction.ticket_id,
+            transaction.id,
+        )
+        return {"status": "ok", "ignored": True, "reason": "ticket_cancelled"}
+
     if payload.gross_amount is not None:
         try:
             paid_amount = Decimal(str(payload.gross_amount))

@@ -28,6 +28,26 @@ async def order_ticket(
     db: Session = Depends(get_db),
 ):
     """Order ticket(s) for a concert."""
+    db.query(User).filter(User.id == current_user.id).with_for_update().first()
+
+    active_ticket = (
+        db.query(Ticket)
+        .filter(
+            Ticket.user_id == current_user.id,
+            Ticket.status.in_(["pending", "paid", "used"]),
+        )
+        .first()
+    )
+    if active_ticket:
+        if active_ticket.status == "pending":
+            detail = "Akun ini sudah memiliki tiket pending. Batalkan tiket pending terlebih dahulu untuk memilih tiket lain."
+        else:
+            detail = "Setiap akun hanya dapat memiliki 1 tiket."
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=detail,
+        )
+
     concert = (
         db.query(Concert)
         .filter(Concert.id == order.concert_id)
@@ -40,21 +60,6 @@ async def order_ticket(
             detail="Konser tidak ditemukan",
         )
 
-    existing_ticket = (
-        db.query(Ticket)
-        .filter(
-            Ticket.user_id == current_user.id,
-            Ticket.concert_id == order.concert_id,
-            Ticket.status.in_(["pending", "paid", "used"]),
-        )
-        .first()
-    )
-    if existing_ticket:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Setiap user hanya dapat memesan 1 tiket untuk konser ini",
-        )
-
     # Check ticket availability
     if concert.available_tickets < order.quantity:
         raise HTTPException(
@@ -65,12 +70,25 @@ async def order_ticket(
     # Create one ticket record per quantity unit
     tickets = []
     for _ in range(order.quantity):
-        ticket = Ticket(
-            user_id=current_user.id,
-            concert_id=concert.id,
-            status="pending",
+        ticket = (
+            db.query(Ticket)
+            .filter(
+                Ticket.user_id == current_user.id,
+                Ticket.concert_id == concert.id,
+                Ticket.status == "cancelled",
+            )
+            .with_for_update()
+            .first()
         )
-        db.add(ticket)
+        if ticket:
+            ticket.status = "pending"
+        else:
+            ticket = Ticket(
+                user_id=current_user.id,
+                concert_id=concert.id,
+                status="pending",
+            )
+            db.add(ticket)
         tickets.append(ticket)
 
     # Reduce available tickets
@@ -91,6 +109,49 @@ async def order_ticket(
     if len(tickets) == 1:
         return tickets[0]
     return tickets
+
+
+@router.post("/{ticket_id}/cancel", response_model=TicketResponse)
+async def cancel_pending_ticket(
+    ticket_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Cancel the current user's pending ticket and release its quota."""
+    ticket = (
+        db.query(Ticket)
+        .filter(Ticket.id == ticket_id, Ticket.user_id == current_user.id)
+        .with_for_update()
+        .first()
+    )
+    if not ticket:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Tiket tidak ditemukan",
+        )
+
+    if ticket.status != "pending":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Hanya tiket pending yang dapat dibatalkan",
+        )
+
+    concert = (
+        db.query(Concert)
+        .filter(Concert.id == ticket.concert_id)
+        .with_for_update()
+        .first()
+    )
+    if concert:
+        concert.available_tickets = min(concert.quota, concert.available_tickets + 1)
+
+    if ticket.transaction and ticket.transaction.status == "pending":
+        ticket.transaction.status = "expired"
+
+    ticket.status = "cancelled"
+    db.commit()
+    db.refresh(ticket)
+    return ticket
 
 
 @router.get("/my-tickets", response_model=List[TicketResponse])
