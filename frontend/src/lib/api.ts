@@ -6,6 +6,61 @@ const API_BASE_URL = (
   .replace(/^http:\/\/concertix-production\.up\.railway\.app/i, "https://concertix-production.up.railway.app")
   .replace(/\/$/, "");
 
+type ValidationErrorItem = {
+  loc?: Array<string | number>;
+  msg?: string;
+  type?: string;
+};
+
+function formatFieldName(field: string): string {
+  const labels: Record<string, string> = {
+    email: "Email",
+    full_name: "Nama lengkap",
+    password: "Password",
+    confirm_password: "Konfirmasi password",
+  };
+  return labels[field] || field;
+}
+
+function cleanErrorMessage(message: string): string {
+  return message.replace(/^Value error,\s*/i, "");
+}
+
+function formatApiErrorDetail(detail: unknown, fallback: string): string {
+  if (typeof detail === "string") {
+    return detail;
+  }
+
+  if (Array.isArray(detail)) {
+    const messages = detail
+      .map((item: unknown) => {
+        if (!item || typeof item !== "object") return null;
+
+        const validation = item as ValidationErrorItem;
+        const message = validation.msg ? cleanErrorMessage(validation.msg) : "";
+        const field = validation.loc
+          ?.filter((segment) => segment !== "body")
+          .map(String)
+          .pop();
+
+        if (field && message) return `${formatFieldName(field)}: ${message}`;
+        return message || validation.type || null;
+      })
+      .filter(Boolean);
+
+    if (messages.length > 0) {
+      return messages.join("\n");
+    }
+  }
+
+  if (detail && typeof detail === "object" && "message" in detail) {
+    const message = (detail as { message?: unknown }).message;
+    if (typeof message === "string") return message;
+  }
+
+  return fallback;
+}
+
 /**
  * Base fetch wrapper with auth header injection.
  */
@@ -30,10 +85,13 @@ async function fetchApi<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
-      detail: "An unexpected error occurred",
-    }));
-    throw new Error(error.detail || `HTTP ${response.status}`);
+    const errorBody = await response.json().catch(() => null);
+    const detail =
+      errorBody && typeof errorBody === "object" && "detail" in errorBody
+        ? (errorBody as { detail?: unknown }).detail
+        : errorBody;
+
+    throw new Error(formatApiErrorDetail(detail, `HTTP ${response.status}`));
   }
 
   if (response.status === 204) {

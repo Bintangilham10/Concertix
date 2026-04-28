@@ -20,8 +20,29 @@ export default function RegisterPage() {
     event.preventDefault();
     setError(null);
 
-    if (!fullName || !email || !password || !confirmPassword) {
+    const normalizedFullName = fullName.trim();
+    const normalizedEmail = email.trim();
+
+    if (!normalizedFullName || !normalizedEmail || !password || !confirmPassword) {
       setError("Semua field harus diisi.");
+      return;
+    }
+
+    if (normalizedFullName.length < 2) {
+      setError("Nama lengkap minimal 2 karakter.");
+      return;
+    }
+
+    if (password.length < 8) {
+      setError("Password minimal 8 karakter.");
+      return;
+    }
+
+    const hasUpper = /[A-Z]/.test(password);
+    const hasLower = /[a-z]/.test(password);
+    const hasDigit = /\d/.test(password);
+    if (!hasUpper || !hasLower || !hasDigit) {
+      setError("Password harus mengandung huruf besar, huruf kecil, dan angka.");
       return;
     }
 
@@ -33,7 +54,7 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      const user = await registerWithJwt(email, password, fullName);
+      const user = await registerWithJwt(normalizedEmail, password, normalizedFullName);
 
       if (user) {
         if (user.role === "admin") {
@@ -144,6 +165,9 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              <p className="auth-note" style={{ marginTop: 8, marginBottom: 0 }}>
+                Minimal 8 karakter, wajib ada huruf besar, huruf kecil, dan angka.
+              </p>
             </div>
 
             <div className="field-group">
