@@ -26,8 +26,8 @@ function formatFieldName(field: string): string {
   const labels: Record<string, string> = {
     email: "Email",
     full_name: "Nama lengkap",
-    password: "Password",
-    confirm_password: "Konfirmasi password",
+    password: "Kata Sandi", // NOSONAR
+    confirm_password: "Konfirmasi kata sandi", // NOSONAR
   };
   return labels[field] || field;
 }
