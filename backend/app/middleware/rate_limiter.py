@@ -5,15 +5,38 @@ Uses slowapi to prevent brute-force attacks and DoS on sensitive endpoints.
 """
 
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from app.config import get_settings
 
-# Create a shared limiter instance
-limiter = Limiter(key_func=get_remote_address)
+settings = get_settings()
+
+def get_rate_limit_key(request: Request) -> str:
+    """Return a stable client key for rate limiting."""
+    if settings.TRUST_PROXY_HEADERS:
+        forwarded_for = request.headers.get("x-forwarded-for")
+        if forwarded_for:
+            return forwarded_for.split(",", 1)[0].strip()
+
+        real_ip = request.headers.get("x-real-ip")
+        if real_ip:
+            return real_ip.strip()
+
+    return request.client.host if request.client else "unknown"
+
+
+rate_limit_storage_url = settings.RATE_LIMIT_STORAGE_URL or settings.REDIS_URL
+
+# Create a shared limiter instance backed by Redis when available. In debug mode,
+# local demos can fall back to memory if Redis is not running yet.
+limiter = Limiter(
+    key_func=get_rate_limit_key,
+    storage_uri=rate_limit_storage_url,
+    in_memory_fallback_enabled=settings.DEBUG,
+)
 
 
 def setup_rate_limiter(app: FastAPI) -> None:

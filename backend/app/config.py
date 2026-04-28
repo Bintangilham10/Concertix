@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://redis:6379/0"
     TOKEN_BLACKLIST_FAIL_CLOSED: bool = False
 
+    # Rate limiting
+    RATE_LIMIT_STORAGE_URL: str = ""
+    TRUST_PROXY_HEADERS: bool = False
+
     class Config:
         env_file = ".env"
         case_sensitive = True
