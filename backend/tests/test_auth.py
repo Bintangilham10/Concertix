@@ -5,6 +5,15 @@ Tests security mitigations: T1 (token blacklist), T4 (rate limit)
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
+from app.database import SessionLocal
+from app.models.user import User
+from app.routers import auth as auth_router
+from app.services.auth_service import (
+    create_access_token,
+    create_refresh_token,
+    hash_password,
+    verify_password,
+)
 
 client = TestClient(app)
 
@@ -128,3 +137,72 @@ class TestRBAC:
 
         admin_resp = client.get("/admin/stats", headers=headers)
         assert admin_resp.status_code == 403
+
+
+class TestPasswordResetOTP:
+    """Password reset should use emailed OTP for registered users."""
+
+    def test_reset_password_with_otp(self, monkeypatch):
+        email = f"reset_{uuid.uuid4().hex[:8]}@example.com"
+        old_password = "OldSecure123"
+        new_password = "NewSecure123"
+        sent = {}
+
+        db = SessionLocal()
+        try:
+            user = User(
+                email=email,
+                full_name="Reset User",
+                password_hash=hash_password(old_password),
+                role="customer",
+            )
+            db.add(user)
+            db.commit()
+            user_id = user.id
+        finally:
+            db.close()
+
+        stale_access_token = create_access_token({"sub": user_id, "token_version": 0})
+        stale_refresh_token = create_refresh_token({"sub": user_id, "token_version": 0})
+        headers = {"Authorization": f"Bearer {stale_access_token}"}
+        assert client.get("/auth/me", headers=headers).status_code == 200
+
+        monkeypatch.setattr(auth_router, "generate_otp", lambda: "123456")
+
+        def fake_send_password_reset_otp(target_email, otp):
+            sent["email"] = target_email
+            sent["otp"] = otp
+            return True
+
+        monkeypatch.setattr(
+            auth_router,
+            "send_password_reset_otp",
+            fake_send_password_reset_otp,
+        )
+
+        forgot_response = client.post("/auth/forgot-password", json={"email": email})
+        assert forgot_response.status_code == 200
+        assert sent == {"email": email, "otp": "123456"}
+
+        reset_response = client.post(
+            "/auth/reset-password",
+            json={"email": email, "otp": "123456", "password": new_password},
+        )
+        assert reset_response.status_code == 200
+
+        db = SessionLocal()
+        try:
+            updated_user = db.query(User).filter(User.email == email).first()
+            assert updated_user is not None
+            assert not verify_password(old_password, updated_user.password_hash)
+            assert verify_password(new_password, updated_user.password_hash)
+            assert updated_user.token_version == 1
+        finally:
+            db.close()
+
+        assert client.get("/auth/me", headers=headers).status_code == 401
+        refresh_response = client.post(
+            "/auth/refresh",
+            json={"refresh_token": stale_refresh_token},
+        )
+        assert refresh_response.status_code == 401
