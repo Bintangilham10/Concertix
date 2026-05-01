@@ -40,6 +40,17 @@ class Settings(BaseSettings):
     RATE_LIMIT_STORAGE_URL: str = ""
     TRUST_PROXY_HEADERS: bool = False
 
+    # Password reset OTP email
+    PASSWORD_RESET_OTP_EXPIRE_MINUTES: int = 10
+    PASSWORD_RESET_OTP_MAX_ATTEMPTS: int = 5
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+    SMTP_USE_TLS: bool = True
+    SMTP_USE_SSL: bool = False
+
     class Config:
         env_file = ".env"
         case_sensitive = True
@@ -95,6 +106,11 @@ def get_settings() -> Settings:
         raise ValueError(
             "MIDTRANS_SERVER_KEY and MIDTRANS_CLIENT_KEY must be set before enabling "
             "MIDTRANS_IS_PRODUCTION."
+        )
+
+    if not settings.DEBUG and not settings.SMTP_HOST:
+        logger.warning(
+            "SMTP_HOST is not set. Password reset OTP emails will be unavailable."
         )
 
     return settings
