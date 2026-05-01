@@ -1,5 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
+import hmac
+import secrets
+import hashlib
 import uuid
 
 from jose import JWTError, jwt
@@ -17,6 +20,23 @@ def hash_password(password: str) -> str:
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a plain-text password against a hash."""
     return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
+
+
+def generate_otp() -> str:
+    """Generate a 6-digit numeric OTP."""
+    return f"{secrets.randbelow(1_000_000):06d}"
+
+
+def hash_otp(user_id: str, otp: str) -> str:
+    """Hash OTP with user-specific context and the app secret."""
+    message = f"{user_id}:{otp}".encode("utf-8")
+    secret = settings.JWT_SECRET_KEY.encode("utf-8")
+    return hmac.new(secret, message, hashlib.sha256).hexdigest()
+
+
+def verify_otp(user_id: str, otp: str, otp_hash: str) -> bool:
+    """Verify an OTP against its stored hash."""
+    return hmac.compare_digest(hash_otp(user_id, otp), otp_hash)
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
