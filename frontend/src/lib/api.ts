@@ -158,6 +158,24 @@ export async function logoutApi(): Promise<void> {
   }
 }
 
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  return fetchApi<{ message: string }>("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function resetPassword(
+  email: string,
+  otp: string,
+  password: string
+): Promise<{ message: string }> {
+  return fetchApi<{ message: string }>("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ email, otp, password }),
+  });
+}
+
 // ── Concerts API ──
 
 export async function getConcerts(page = 1, perPage = 10) {
