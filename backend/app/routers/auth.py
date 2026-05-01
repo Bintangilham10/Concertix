@@ -1,16 +1,32 @@
+from datetime import datetime, timedelta, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.database import get_db
+from app.models.password_reset_otp import PasswordResetOTP
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, TokenResponse, UserResponse, TokenRefreshRequest
+from app.schemas.user import (
+    ForgotPasswordRequest,
+    ForgotPasswordResponse,
+    ResetPasswordRequest,
+    TokenRefreshRequest,
+    TokenResponse,
+    UserCreate,
+    UserLogin,
+    UserResponse,
+)
 from app.middleware.rate_limiter import limiter
 from app.middleware.auth_middleware import get_current_user
+from app.services.email_service import send_password_reset_otp
 from app.services.auth_service import (
+    generate_otp,
+    hash_otp,
     hash_password,
     verify_password,
+    verify_otp,
     create_access_token,
     create_refresh_token,
     decode_token,
@@ -20,6 +36,14 @@ from app.services.token_blacklist import blacklist_token, is_token_blacklisted
 
 router = APIRouter()
 security = HTTPBearer()
+
+FORGOT_PASSWORD_MESSAGE = (
+    "Jika email terdaftar, kode OTP reset password telah dikirim."
+)
+
+
+def _token_data_for_user(user: User) -> dict:
+    return {"sub": user.id, "token_version": user.token_version or 0}
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
@@ -46,7 +70,7 @@ async def register(request: Request, user_data: UserCreate, db: Session = Depend
     db.refresh(new_user)
 
     # Generate tokens
-    token_data = {"sub": new_user.id}
+    token_data = _token_data_for_user(new_user)
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
@@ -68,7 +92,7 @@ async def login(request: Request, credentials: UserLogin, db: Session = Depends(
             detail="Email atau password salah",
         )
 
-    token_data = {"sub": user.id}
+    token_data = _token_data_for_user(user)
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
 
@@ -77,6 +101,112 @@ async def login(request: Request, credentials: UserLogin, db: Session = Depends(
         refresh_token=refresh_token,
         user=UserResponse.model_validate(user),
     )
+
+
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@limiter.limit("3/minute")
+async def forgot_password(
+    request: Request,
+    payload: ForgotPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """Send a password reset OTP to a registered email address."""
+    settings = get_settings()
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        return ForgotPasswordResponse(message=FORGOT_PASSWORD_MESSAGE)
+
+    now = datetime.now(timezone.utc)
+    db.query(PasswordResetOTP).filter(
+        PasswordResetOTP.user_id == user.id,
+        PasswordResetOTP.consumed_at.is_(None),
+    ).update({PasswordResetOTP.consumed_at: now}, synchronize_session=False)
+
+    otp = generate_otp()
+    reset_otp = PasswordResetOTP(
+        user_id=user.id,
+        otp_hash=hash_otp(user.id, otp),
+        expires_at=now + timedelta(minutes=settings.PASSWORD_RESET_OTP_EXPIRE_MINUTES),
+    )
+    db.add(reset_otp)
+    db.commit()
+
+    if not send_password_reset_otp(user.email, otp):
+        reset_otp.consumed_at = now
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Layanan email sedang tidak tersedia. Coba lagi nanti.",
+        )
+
+    return ForgotPasswordResponse(message=FORGOT_PASSWORD_MESSAGE)
+
+
+@router.post("/reset-password", response_model=ForgotPasswordResponse)
+@limiter.limit("5/minute")
+async def reset_password(
+    request: Request,
+    payload: ResetPasswordRequest,
+    db: Session = Depends(get_db),
+):
+    """Reset a user's password using a valid OTP."""
+    settings = get_settings()
+    user = db.query(User).filter(User.email == payload.email).first()
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode OTP tidak valid atau sudah kedaluwarsa",
+        )
+
+    now = datetime.now(timezone.utc)
+    reset_otp = (
+        db.query(PasswordResetOTP)
+        .filter(
+            PasswordResetOTP.user_id == user.id,
+            PasswordResetOTP.consumed_at.is_(None),
+        )
+        .order_by(PasswordResetOTP.created_at.desc())
+        .first()
+    )
+
+    if not reset_otp:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode OTP tidak valid atau sudah kedaluwarsa",
+        )
+
+    expires_at = reset_otp.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at <= now:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode OTP tidak valid atau sudah kedaluwarsa",
+        )
+
+    if reset_otp.attempt_count >= settings.PASSWORD_RESET_OTP_MAX_ATTEMPTS:
+        reset_otp.consumed_at = now
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode OTP terlalu sering dicoba. Minta kode baru.",
+        )
+
+    if not verify_otp(user.id, payload.otp, reset_otp.otp_hash):
+        reset_otp.attempt_count += 1
+        db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Kode OTP tidak valid atau sudah kedaluwarsa",
+        )
+
+    user.password_hash = hash_password(payload.password)
+    user.token_version = (user.token_version or 0) + 1
+    reset_otp.consumed_at = now
+    db.commit()
+
+    return ForgotPasswordResponse(message="Kata sandi berhasil diubah. Silakan login kembali.")
 
 
 @router.post("/logout")
@@ -143,7 +273,14 @@ async def refresh(
             detail="User tidak ditemukan",
         )
 
-    token_data = {"sub": user.id}
+    token_version = payload.get("token_version", 0)
+    if token_version != (user.token_version or 0):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesi sudah tidak valid. Silakan login ulang.",
+        )
+
+    token_data = _token_data_for_user(user)
     access_token = create_access_token(token_data)
     new_refresh_token = create_refresh_token(token_data)
 

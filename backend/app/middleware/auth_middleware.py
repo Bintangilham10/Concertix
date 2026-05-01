@@ -59,6 +59,14 @@ async def get_current_user(
             detail="User tidak ditemukan",
         )
 
+    token_version = payload.get("token_version", 0)
+    if token_version != (user.token_version or 0):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sesi sudah tidak valid. Silakan login ulang.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
     return user
 
 
