@@ -50,6 +50,11 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = ""
     SMTP_USE_TLS: bool = True
     SMTP_USE_SSL: bool = False
+    BREVO_API_KEY: str = ""
+    BREVO_FROM_EMAIL: str = ""
+    BREVO_FROM_NAME: str = "Concertix"
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = ""
 
     class Config:
         env_file = ".env"
@@ -108,9 +113,15 @@ def get_settings() -> Settings:
             "MIDTRANS_IS_PRODUCTION."
         )
 
-    if not settings.DEBUG and not settings.SMTP_HOST:
+    if (
+        not settings.DEBUG
+        and not settings.SMTP_HOST
+        and not settings.RESEND_API_KEY
+        and not settings.BREVO_API_KEY
+    ):
         logger.warning(
-            "SMTP_HOST is not set. Password reset OTP emails will be unavailable."
+            "No email provider is configured. Set BREVO_API_KEY, RESEND_API_KEY, "
+            "or SMTP_HOST so password reset OTP emails can be delivered."
         )
 
     return settings
