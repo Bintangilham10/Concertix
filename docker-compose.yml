@@ -166,6 +166,37 @@ services:
   # ── Security Scanning (CI only, optional for local) ──
   # ══════════════════════════════════════════════════════════════
 
+  # ── Jenkins CI/CD ──
+  jenkins:
+    build:
+      context: ./jenkins
+      dockerfile: Dockerfile
+    container_name: concertix-jenkins
+    restart: unless-stopped
+    user: root
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8090:8080"   # Jenkins UI
+      - "127.0.0.1:50000:50000" # Jenkins agent port
+    volumes:
+      - jenkins_data:/var/jenkins_home          # Data Jenkins (jobs, config, plugins)
+      - /var/run/docker.sock:/var/run/docker.sock # Akses Docker host dari dalam Jenkins
+      - .:/workspace                             # Mount seluruh project ke Jenkins
+      - ./jenkins/init.groovy.d:/var/jenkins_home/init.groovy.d:ro
+    environment:
+      JAVA_OPTS: "-Djenkins.install.runSetupWizard=false"
+      COMPOSE_PROJECT_NAME: concertix
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    profiles:
+      - ci  # Jalankan dengan: docker-compose --profile ci up jenkins
+    networks:
+      - concertix-net
+
   # ── SonarQube (SAST) ──
   sonarqube:
     image: sonarqube:10.4-community
@@ -192,6 +223,7 @@ volumes:
   sonarqube_data:
   sonarqube_logs:
   sonarqube_extensions:
+  jenkins_data:
 
 networks:
   concertix-net:
