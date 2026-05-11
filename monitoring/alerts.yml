@@ -1,0 +1,61 @@
+groups:
+  - name: concertix-availability
+    rules:
+      - alert: ConcertixBackendDown
+        expr: up{job="concertix-backend"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: backend
+        annotations:
+          summary: "Concertix backend metrics target is down"
+          description: "Prometheus cannot scrape backend:8000/metrics for more than 1 minute. Check the concertix-backend container and FastAPI health."
+
+      - alert: ConcertixMonitoringTargetDown
+        expr: up{job=~"cadvisor|alertmanager"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: monitoring
+        annotations:
+          summary: "Monitoring target is down"
+          description: "Prometheus target {{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes."
+
+  - name: concertix-api-health
+    rules:
+      - alert: ConcertixBackendHigh5xxRate
+        expr: sum(rate(http_requests_total{job="concertix-backend", status=~"5.."}[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Concertix backend is returning elevated 5xx errors"
+          description: "Backend 5xx responses are above 0.05 requests/second for 2 minutes."
+
+      - alert: ConcertixBackendHighLatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job="concertix-backend"}[5m])) by (le)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: backend
+        annotations:
+          summary: "Concertix backend p95 latency is high"
+          description: "Backend p95 request latency has stayed above 2 seconds for 5 minutes."
+
+  - name: concertix-container-resources
+    rules:
+      - alert: ConcertixContainerHighMemoryUsage
+        expr: |
+          (
+            container_memory_working_set_bytes{name=~"concertix-.+"}
+            / container_spec_memory_limit_bytes{name=~"concertix-.+"}
+          ) * 100 > 85
+          and container_spec_memory_limit_bytes{name=~"concertix-.+"} > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: container
+        annotations:
+          summary: "Concertix container memory usage is high"
+          description: "Container {{ $labels.name }} has used more than 85% of its memory limit for 5 minutes."

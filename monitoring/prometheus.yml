@@ -3,15 +3,15 @@ global:
   evaluation_interval: 15s   # Evaluate rules every 15 seconds
   scrape_timeout: 10s
 
-# Alertmanager configuration (optional — add later)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets: ['alertmanager:9093']
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
 
-# Load alerting rules (optional)
-# rule_files:
-#   - "alert_rules.yml"
+# Alerting rules
+rule_files:
+  - "/etc/prometheus/alerts.yml"
 
 scrape_configs:
 
@@ -19,6 +19,11 @@ scrape_configs:
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
+
+  # Alertmanager
+  - job_name: 'alertmanager'
+    static_configs:
+      - targets: ['alertmanager:9093']
 
   # ── FastAPI Backend Metrics (T4 Monitoring) ──────────────────────
   # Exposed by prometheus-fastapi-instrumentator at /metrics
