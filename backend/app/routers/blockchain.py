@@ -3,7 +3,7 @@ Blockchain API Router — Endpoints for viewing and verifying the ticket blockch
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime
@@ -14,6 +14,7 @@ from app.models.blockchain import Block
 from app.models.ticket import Ticket
 from app.middleware.auth_middleware import get_current_user
 from app.middleware.rbac import require_role
+from app.middleware.rate_limiter import limiter  # T4: Rate limiting
 from app.services.blockchain_service import (
     verify_chain_integrity,
     get_ticket_block,
@@ -78,7 +79,8 @@ class TicketBlockchainStatus(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("/info", response_model=ChainInfoResponse)
-async def get_chain_info(db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_chain_info(request: Request, db: Session = Depends(get_db)):
     """Get blockchain overview information."""
     length = get_chain_length(db)
     latest = get_latest_block(db)
