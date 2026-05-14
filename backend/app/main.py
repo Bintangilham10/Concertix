@@ -1,5 +1,8 @@
-from fastapi import FastAPI
+from collections.abc import Awaitable, Callable
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.responses import Response
 
 from app.config import get_settings
 from app.routers import auth, concerts, tickets, payments, admin
@@ -39,6 +42,17 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+
+@app.middleware("http")
+async def add_security_headers(
+    request: Request,
+    call_next: Callable[[Request], Awaitable[Response]],
+) -> Response:
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("Cross-Origin-Resource-Policy", "same-origin")
+    return response
 
 # ── T4 Mitigation: Rate Limiting ────────────────────────────────────────────
 setup_rate_limiter(app)
