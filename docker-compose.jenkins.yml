@@ -1,9 +1,7 @@
 services:
   backend:
     image: concertix-backend:jenkins
-    # Jenkins runs Docker commands from inside a container. Removing the local
-    # source bind mount keeps Docker Desktop from resolving /workspace/backend
-    # as a host path during the runtime deploy stage.
+    # Jenkins runs Docker commands from inside a container.
     volumes: !reset []
 
   frontend:
