@@ -18,6 +18,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # ── Container Hardening ──
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+      - DAC_OVERRIDE
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 100
     networks:
       - concertix-net
 
@@ -34,6 +48,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # ── Container Hardening ──
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 50
     networks:
       - concertix-net
 
@@ -81,6 +106,18 @@ services:
     volumes:
       - ./backend:/app
     command: sh -c "python -m scripts.init_demo && uvicorn app.main:app --host 0.0.0.0 --port $${PORT:-8000}"
+    # ── Container Hardening ──
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+      - /app/__pycache__:size=32m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 100
     networks:
       - concertix-net
 
@@ -100,6 +137,18 @@ services:
       - "127.0.0.1:3000:3000"
     depends_on:
       - backend
+    # ── Container Hardening ──
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+      - /app/.next/cache:size=128m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 100
     networks:
       - concertix-net
 
@@ -120,6 +169,14 @@ services:
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
+    # ── Container Hardening ──
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 128m
+    memswap_limit: 128m
+    pids_limit: 50
     networks:
       - concertix-net
 
@@ -140,6 +197,14 @@ services:
     depends_on:
       - backend
       - alertmanager
+    # ── Container Hardening ──
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 512m
+    memswap_limit: 512m
+    pids_limit: 100
     networks:
       - concertix-net
 
@@ -160,6 +225,19 @@ services:
       - "127.0.0.1:3001:3000"
     depends_on:
       - prometheus
+    # ── Container Hardening ──
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - FOWNER
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    memswap_limit: 256m
+    pids_limit: 100
     networks:
       - concertix-net
 
