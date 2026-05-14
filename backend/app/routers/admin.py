@@ -3,7 +3,7 @@ Admin API Router — Dashboard statistics and management endpoints.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from pydantic import BaseModel
@@ -15,6 +15,7 @@ from app.models.concert import Concert
 from app.models.ticket import Ticket
 from app.models.transaction import Transaction
 from app.middleware.rbac import require_role
+from app.middleware.rate_limiter import limiter  # T4: Rate limiting
 from app.services.blockchain_service import get_ticket_block, is_ticket_used
 
 
@@ -105,7 +106,9 @@ class AdminTicketScanResponse(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("/stats", response_model=AdminStatsResponse)
+@limiter.limit("30/minute")
 async def get_admin_stats(
+    request: Request,
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
@@ -190,7 +193,9 @@ async def get_admin_stats(
 # ── Admin Transactions List ──────────────────────────────────────────────────
 
 @router.get("/tickets/{ticket_id}/scan", response_model=AdminTicketScanResponse)
+@limiter.limit("20/minute")
 async def scan_ticket_detail(
+    request: Request,
     ticket_id: str,
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
@@ -280,7 +285,9 @@ class AdminTransactionsResponse(BaseModel):
 
 
 @router.get("/transactions", response_model=AdminTransactionsResponse)
+@limiter.limit("30/minute")
 async def get_admin_transactions(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     status_filter: Optional[str] = Query(None, alias="status"),
@@ -376,7 +383,9 @@ class AdminUsersResponse(BaseModel):
 
 
 @router.get("/users", response_model=AdminUsersResponse)
+@limiter.limit("30/minute")
 async def get_admin_users(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
     role: Optional[str] = Query(None),
