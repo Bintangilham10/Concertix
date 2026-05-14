@@ -10,7 +10,7 @@ pipeline {
         booleanParam(
             name: 'STRICT_SECURITY_GATES',
             defaultValue: false,
-            description: 'Fail pipeline on dependency/image/DAST findings. Turn on for final DevSecOps demo.'
+            description: 'Fail pipeline on dependency/image/DAST findings. Turn on for production DevSecOps .'
         )
     }
 
@@ -50,6 +50,7 @@ pipeline {
                 sh '''
                     set -eu
                     test -f Jenkinsfile
+                    rm -rf reports backend/reports frontend/reports
                     mkdir -p reports backend/reports frontend/reports
                     rm -rf backend/.jenkins-venv
                     docker version
@@ -140,10 +141,11 @@ pipeline {
                         dir('frontend') {
                             sh '''
                                 set -eu
+                                rm -rf .next
                                 npm ci
                                 npm run lint
-                                npx tsc --noEmit
                                 npm run build
+                                npx tsc --noEmit
                             '''
                         }
                     }
@@ -232,7 +234,8 @@ pipeline {
                             set +e
                             mkdir -p reports/secret-scan
                             git grep -InE "(AKIA[0-9A-Z]{16}|BEGIN (RSA |OPENSSH |EC |DSA )?PRIVATE KEY|MIDTRANS_SERVER_KEY=.*[A-Za-z0-9_-]{20,}|JWT_SECRET_KEY=.*[A-Za-z0-9_-]{32,})" -- . \
-                              ':!*.md' ':!.env.example' ':!reports/**' ':!frontend/package-lock.json' \
+                              ':(exclude)*.md' ':(exclude)**/.env.example' ':(exclude).env.example' \
+                              ':(exclude)reports/**' ':(exclude)frontend/package-lock.json' \
                               > reports/secret-scan/findings.txt
                             STATUS=$?
                             if [ "$STATUS" -eq 0 ]; then
