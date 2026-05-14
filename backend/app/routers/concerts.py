@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -8,12 +8,15 @@ from app.models.ticket import Ticket
 from app.models.user import User
 from app.schemas.concert import ConcertCreate, ConcertListResponse, ConcertUpdate, ConcertResponse
 from app.middleware.rbac import require_role  # T10: Use generic RBAC middleware
+from app.middleware.rate_limiter import limiter  # T4: Rate limiting
 
 router = APIRouter()
 
 
 @router.get("/", response_model=ConcertListResponse)
+@limiter.limit("30/minute")
 async def list_concerts(
+    request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db),
@@ -39,7 +42,8 @@ async def list_concerts(
 
 
 @router.get("/{concert_id}", response_model=ConcertResponse)
-async def get_concert(concert_id: str, db: Session = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_concert(request: Request, concert_id: str, db: Session = Depends(get_db)):
     """Get a single concert by ID (public)."""
     concert = db.query(Concert).filter(Concert.id == concert_id).first()
     if not concert:
@@ -51,7 +55,9 @@ async def get_concert(concert_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=ConcertResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def create_concert(
+    request: Request,
     concert_data: ConcertCreate,
     admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
@@ -68,7 +74,9 @@ async def create_concert(
 
 
 @router.put("/{concert_id}", response_model=ConcertResponse)
+@limiter.limit("10/minute")
 async def update_concert(
+    request: Request,
     concert_id: str,
     concert_data: ConcertUpdate,
     admin: User = Depends(require_role("admin")),  # T10: RBAC
@@ -101,7 +109,9 @@ async def update_concert(
 
 
 @router.delete("/{concert_id}", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("10/minute")
 async def delete_concert(
+    request: Request,
     concert_id: str,
     admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
