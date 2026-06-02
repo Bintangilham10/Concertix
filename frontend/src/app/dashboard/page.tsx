@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { orderTicket, createPayment, getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { startMidtransPayment } from "@/lib/midtrans";
+import { FORM_LIMITS, cleanDigits, cleanPlainText, limitLength } from "@/lib/form-constraints";
 
 const CONCERT_IDS: Record<string, string> = {
   VIP: "a5ec93d2-7c9d-4936-983e-5c6a6a9f3a5c",
@@ -20,6 +21,14 @@ interface UserTicketSummary {
   concert_id: string;
   status: string;
 }
+
+const fieldHintStyle: React.CSSProperties = {
+  color: "#9ca3af",
+  display: "block",
+  fontSize: 12,
+  lineHeight: 1.5,
+  marginTop: 6,
+};
 
 function formatRupiah(n: number): string {
   return "Rp " + n.toLocaleString("id-ID");
@@ -142,9 +151,12 @@ export default function DashboardTickets() {
       return;
     }
 
-    const nOk = buyerName.trim().length > 1;
-    const eOk = buyerEmail.includes("@") && buyerEmail.includes(".");
-    const pOk = buyerPhone.trim().length >= 8;
+    const normalizedName = buyerName.trim();
+    const normalizedEmail = buyerEmail.trim();
+    const normalizedPhone = buyerPhone.trim();
+    const nOk = normalizedName.length >= FORM_LIMITS.fullNameMin && normalizedName.length <= FORM_LIMITS.fullNameMax;
+    const eOk = normalizedEmail.length <= FORM_LIMITS.emailMax && normalizedEmail.includes("@") && normalizedEmail.includes(".");
+    const pOk = normalizedPhone.length >= FORM_LIMITS.buyerPhoneMin && normalizedPhone.length <= FORM_LIMITS.buyerPhoneMax;
 
     setNameError(!nOk);
     setEmailError(!eOk);
@@ -154,6 +166,10 @@ export default function DashboardTickets() {
       showToast("⚠️", "Periksa Form", "Ada data yang belum diisi dengan benar.", 3000);
       return;
     }
+
+    setBuyerName(normalizedName);
+    setBuyerEmail(normalizedEmail);
+    setBuyerPhone(normalizedPhone);
 
     setCheckoutText("Memproses Pesanan...");
     setCheckoutDisabled(true);
@@ -320,12 +336,14 @@ export default function DashboardTickets() {
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <div>
                   <label style={{ display: "block", fontSize: 13, marginBottom: 8, color: "#d1d5db" }}>Nama Lengkap Sesuai KTP <span style={{ color: "#ef4444" }}>*</span></label>
-                  <input ref={nameInputRef} type="text" value={buyerName} onChange={(e) => setBuyerName(e.target.value)} placeholder="Misal: Bintang Ilham" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: nameError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
-                  {nameError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nama wajib diisi</span>}
+                  <input ref={nameInputRef} type="text" value={buyerName} onChange={(e) => setBuyerName(cleanPlainText(e.target.value, FORM_LIMITS.fullNameMax))} placeholder="Misal: Bintang Ilham" autoComplete="name" minLength={FORM_LIMITS.fullNameMin} maxLength={FORM_LIMITS.fullNameMax} required style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: nameError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
+                  <span style={fieldHintStyle}>{FORM_LIMITS.fullNameMin}-{FORM_LIMITS.fullNameMax} karakter. Hindari simbol atau tag HTML.</span>
+                  {nameError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nama wajib diisi sesuai batas karakter.</span>}
                 </div>
                 <div>
                   <label style={{ display: "block", fontSize: 13, marginBottom: 8, color: "#d1d5db" }}>Email Aktif <span style={{ color: "#ef4444" }}>*</span></label>
-                  <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(e.target.value)} placeholder="Misal: bintang@example.com" style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: emailError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
+                  <input type="email" value={buyerEmail} onChange={(e) => setBuyerEmail(limitLength(e.target.value, FORM_LIMITS.emailMax))} placeholder="Misal: bintang@example.com" autoComplete="email" inputMode="email" maxLength={FORM_LIMITS.emailMax} required style={{ width: "100%", padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: emailError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
+                  <span style={fieldHintStyle}>Format email aktif, maksimal {FORM_LIMITS.emailMax} karakter.</span>
                   {emailError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Email tidak valid</span>}
                 </div>
                 <div>
@@ -334,9 +352,10 @@ export default function DashboardTickets() {
                     <select value={phoneCode} onChange={(e) => setPhoneCode(e.target.value)} style={{ padding: "12px 8px", background: "rgba(0,0,0,0.2)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, color: "#fff", outline: "none" }}>
                       <option value="+62">ID (+62)</option>
                     </select>
-                    <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(e.target.value.replace(/[^0-9]/g, ""))} placeholder="81234567890" style={{ flex: 1, padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: phoneError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
+                    <input type="tel" value={buyerPhone} onChange={(e) => setBuyerPhone(cleanDigits(e.target.value, FORM_LIMITS.buyerPhoneMax))} placeholder="81234567890" autoComplete="tel-national" inputMode="numeric" pattern="[0-9]{8,13}" minLength={FORM_LIMITS.buyerPhoneMin} maxLength={FORM_LIMITS.buyerPhoneMax} required style={{ flex: 1, padding: "12px 16px", borderRadius: 8, background: "rgba(0,0,0,0.2)", border: phoneError ? "1px solid #ef4444" : "1px solid rgba(255,255,255,0.1)", color: "#fff", outline: "none" }} />
                   </div>
-                  {phoneError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nomor HP terlalu pendek</span>}
+                  <span style={fieldHintStyle}>Masukkan {FORM_LIMITS.buyerPhoneMin}-{FORM_LIMITS.buyerPhoneMax} digit angka setelah +62.</span>
+                  {phoneError && <span style={{ color: "#ef4444", fontSize: 12, marginTop: 4, display: "block" }}>Nomor HP harus {FORM_LIMITS.buyerPhoneMin}-{FORM_LIMITS.buyerPhoneMax} digit.</span>}
                 </div>
               </div>
             </div>
