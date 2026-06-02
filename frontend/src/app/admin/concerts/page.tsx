@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
 import { createConcert, deleteConcert, getConcerts, updateConcert } from "@/lib/api";
+import { FORM_LIMITS, cleanPlainText, limitLength } from "@/lib/form-constraints";
 import type { User, Concert, ConcertPayload } from "@/types";
 
 const emptyConcertForm: ConcertPayload = {
@@ -17,6 +18,83 @@ const emptyConcertForm: ConcertPayload = {
   price: 0,
   quota: 1,
   image_url: "",
+};
+
+type ConcertFormField = {
+  name: keyof ConcertPayload;
+  label: string;
+  type: "text" | "number";
+  placeholder: string;
+  help: string;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  inputMode?: "numeric" | "decimal";
+};
+
+const concertFormFields: ConcertFormField[] = [
+  {
+    name: "name",
+    label: "Nama Konser",
+    type: "text",
+    placeholder: "Konser Bandung Raya 2026",
+    maxLength: FORM_LIMITS.concertNameMax,
+    help: `Maksimal ${FORM_LIMITS.concertNameMax} karakter. Hindari tag HTML.`,
+  },
+  {
+    name: "artist",
+    label: "Artis",
+    type: "text",
+    placeholder: "Nama artis atau band",
+    maxLength: FORM_LIMITS.concertArtistMax,
+    help: `Maksimal ${FORM_LIMITS.concertArtistMax} karakter.`,
+  },
+  {
+    name: "venue",
+    label: "Venue",
+    type: "text",
+    placeholder: "Lapangan Gasibu, Bandung",
+    maxLength: FORM_LIMITS.concertVenueMax,
+    help: `Maksimal ${FORM_LIMITS.concertVenueMax} karakter.`,
+  },
+  {
+    name: "time",
+    label: "Waktu",
+    type: "text",
+    placeholder: "19:00 WIB",
+    maxLength: FORM_LIMITS.concertTimeMax,
+    help: `Contoh: 19:00 WIB. Maksimal ${FORM_LIMITS.concertTimeMax} karakter.`,
+  },
+  {
+    name: "price",
+    label: "Harga",
+    type: "number",
+    placeholder: "500000",
+    min: FORM_LIMITS.concertPriceMin,
+    max: FORM_LIMITS.concertPriceMax,
+    step: 1000,
+    inputMode: "decimal",
+    help: "Angka Rupiah tanpa titik/koma.",
+  },
+  {
+    name: "quota",
+    label: "Kuota",
+    type: "number",
+    placeholder: "1000",
+    min: FORM_LIMITS.concertQuotaMin,
+    max: FORM_LIMITS.concertQuotaMax,
+    step: 1,
+    inputMode: "numeric",
+    help: `${FORM_LIMITS.concertQuotaMin}-${FORM_LIMITS.concertQuotaMax} tiket.`,
+  },
+];
+
+const formHintStyle: React.CSSProperties = {
+  color: "#9ca3af",
+  fontSize: 12,
+  lineHeight: 1.45,
+  margin: 0,
 };
 
 export default function AdminConcertsPage() {
@@ -124,18 +202,37 @@ export default function AdminConcertsPage() {
 
   const handleSaveConcert = async (event: React.FormEvent) => {
     event.preventDefault();
-    setSaving(true);
     setError(null);
 
-    try {
-      const payload: ConcertPayload = {
-        ...formData,
-        price: Number(formData.price),
-        quota: Number(formData.quota),
-        image_url: formData.image_url?.trim() || undefined,
-        description: formData.description?.trim() || undefined,
-      };
+    const payload: ConcertPayload = {
+      ...formData,
+      name: formData.name.trim(),
+      artist: formData.artist.trim(),
+      venue: formData.venue.trim(),
+      time: formData.time.trim(),
+      price: Number(formData.price),
+      quota: Number(formData.quota),
+      image_url: formData.image_url?.trim() || undefined,
+      description: formData.description?.trim() || undefined,
+    };
 
+    if (!payload.name || !payload.artist || !payload.venue || !payload.time || !payload.date) {
+      setError("Nama konser, artis, venue, tanggal, dan waktu wajib diisi.");
+      return;
+    }
+
+    if (payload.price < FORM_LIMITS.concertPriceMin || payload.price > FORM_LIMITS.concertPriceMax) {
+      setError(`Harga harus ${FORM_LIMITS.concertPriceMin} sampai ${FORM_LIMITS.concertPriceMax}.`);
+      return;
+    }
+
+    if (payload.quota < FORM_LIMITS.concertQuotaMin || payload.quota > FORM_LIMITS.concertQuotaMax) {
+      setError(`Kuota harus ${FORM_LIMITS.concertQuotaMin} sampai ${FORM_LIMITS.concertQuotaMax}.`);
+      return;
+    }
+
+    setSaving(true);
+    try {
       if (editingConcert) {
         await updateConcert(editingConcert.id, payload);
       } else {
@@ -169,7 +266,7 @@ export default function AdminConcertsPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    setSearchQuery(searchInput);
+    setSearchQuery(searchInput.trim());
   };
 
   const formatCurrency = (amount: number) => {
@@ -286,8 +383,12 @@ export default function AdminConcertsPage() {
           <input 
             type="text" 
             value={searchInput} 
-            onChange={(e) => setSearchInput(e.target.value)} 
-            placeholder="Cari nama konser atau artis..."
+            onChange={(e) => setSearchInput(cleanPlainText(e.target.value, FORM_LIMITS.searchMax))}
+            placeholder="Cari nama konser/artis (maks. 80 karakter)"
+            aria-label="Cari nama konser atau artis"
+            autoComplete="off"
+            maxLength={FORM_LIMITS.searchMax}
+            spellCheck={false}
             style={{
               width: "100%", padding: "14px 16px 14px 44px", borderRadius: 12,
               border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
@@ -445,41 +546,48 @@ export default function AdminConcertsPage() {
               </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 14 }}>
-                {[
-                  ["name", "Nama Konser", "text"],
-                  ["artist", "Artis", "text"],
-                  ["venue", "Venue", "text"],
-                  ["time", "Waktu", "text"],
-                  ["price", "Harga", "number"],
-                  ["quota", "Kuota", "number"],
-                ].map(([name, label, type]) => (
-                  <label key={name} style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
-                    {label}
+                {concertFormFields.map((field) => (
+                  <label key={field.name} style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
+                    {field.label}
                     <input
                       required
-                      type={type}
-                      min={type === "number" ? 0 : undefined}
-                      value={String(formData[name as keyof ConcertPayload] ?? "")}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, [name]: type === "number" ? Number(e.target.value) : e.target.value }))}
+                      type={field.type}
+                      min={field.min}
+                      max={field.max}
+                      step={field.step}
+                      inputMode={field.inputMode}
+                      maxLength={field.maxLength}
+                      placeholder={field.placeholder}
+                      value={String(formData[field.name] ?? "")}
+                      onChange={(e) => setFormData((prev) => ({
+                        ...prev,
+                        [field.name]: field.type === "number"
+                          ? Number(e.target.value)
+                          : cleanPlainText(e.target.value, field.maxLength ?? FORM_LIMITS.concertNameMax),
+                      }))}
                       style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }}
                     />
+                    <span style={formHintStyle}>{field.help}</span>
                   </label>
                 ))}
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
                   Tanggal
                   <input required type="datetime-local" value={formData.date} onChange={(e) => setFormData((prev) => ({ ...prev, date: e.target.value }))} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }} />
+                  <span style={formHintStyle}>Pilih tanggal dan jam konser dari kalender browser.</span>
                 </label>
 
                 <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600 }}>
                   URL Gambar
-                  <input type="url" value={formData.image_url || ""} onChange={(e) => setFormData((prev) => ({ ...prev, image_url: e.target.value }))} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }} />
+                  <input type="url" value={formData.image_url || ""} onChange={(e) => setFormData((prev) => ({ ...prev, image_url: limitLength(e.target.value, FORM_LIMITS.concertImageUrlMax) }))} placeholder="https://example.com/poster.jpg" maxLength={FORM_LIMITS.concertImageUrlMax} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none" }} />
+                  <span style={formHintStyle}>URL http/https, maksimal {FORM_LIMITS.concertImageUrlMax} karakter.</span>
                 </label>
               </div>
 
               <label style={{ display: "flex", flexDirection: "column", gap: 6, color: "#d1d5db", fontSize: 13, fontWeight: 600, marginTop: 14 }}>
                 Deskripsi
-                <textarea value={formData.description || ""} onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))} rows={4} style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none", resize: "vertical" }} />
+                <textarea value={formData.description || ""} onChange={(e) => setFormData((prev) => ({ ...prev, description: cleanPlainText(e.target.value, FORM_LIMITS.concertDescriptionMax) }))} rows={4} maxLength={FORM_LIMITS.concertDescriptionMax} placeholder="Ringkasan konser, benefit tiket, atau informasi gate." style={{ padding: "12px 14px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none", resize: "vertical" }} />
+                <span style={formHintStyle}>Maksimal {(formData.description || "").length}/{FORM_LIMITS.concertDescriptionMax} karakter.</span>
               </label>
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
