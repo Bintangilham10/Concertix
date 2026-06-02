@@ -183,7 +183,7 @@ export async function getConcerts(page = 1, perPage = 10) {
 }
 
 export async function getConcertById(id: string) {
-  return fetchApi(`/concerts/${id}`);
+  return fetchApi(`/concerts/${encodeURIComponent(id)}`);
 }
 
 export async function createConcert(payload: ConcertPayload): Promise<Concert> {
@@ -194,14 +194,14 @@ export async function createConcert(payload: ConcertPayload): Promise<Concert> {
 }
 
 export async function updateConcert(id: string, payload: Partial<ConcertPayload>): Promise<Concert> {
-  return fetchApi<Concert>(`/concerts/${id}`, {
+  return fetchApi<Concert>(`/concerts/${encodeURIComponent(id)}`, {
     method: "PUT",
     body: JSON.stringify(payload),
   });
 }
 
 export async function deleteConcert(id: string): Promise<void> {
-  await fetchApi<void>(`/concerts/${id}`, {
+  await fetchApi<void>(`/concerts/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
 }
@@ -220,7 +220,7 @@ export async function getMyTickets() {
 }
 
 export async function cancelTicket(ticketId: string) {
-  return fetchApi(`/tickets/${ticketId}/cancel`, {
+  return fetchApi(`/tickets/${encodeURIComponent(ticketId)}/cancel`, {
     method: "POST",
   });
 }
@@ -271,11 +271,11 @@ export async function getAdminUsers(
 }
 
 export async function getAdminTicketScan(ticketId: string): Promise<AdminTicketScanResult> {
-  return fetchApi<AdminTicketScanResult>(`/admin/tickets/${ticketId}/scan`);
+  return fetchApi<AdminTicketScanResult>(`/admin/tickets/${encodeURIComponent(ticketId)}/scan`);
 }
 
 export async function validateTicket(ticketId: string): Promise<BlockchainBlock> {
-  return fetchApi<BlockchainBlock>(`/blockchain/ticket/${ticketId}/validate`, {
+  return fetchApi<BlockchainBlock>(`/blockchain/ticket/${encodeURIComponent(ticketId)}/validate`, {
     method: "POST",
   });
 }
