@@ -7,7 +7,12 @@ from app.schemas.concert import ConcertResponse
 
 
 class TicketOrderRequest(BaseModel):
-    concert_id: str
+    concert_id: str = Field(
+        ...,
+        min_length=36,
+        max_length=36,
+        pattern=r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+    )
     quantity: int = Field(default=1, ge=1, le=1)
 
 
