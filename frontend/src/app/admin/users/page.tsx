@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
 import { getAdminUsers } from "@/lib/api";
+import { FORM_LIMITS, cleanPlainText } from "@/lib/form-constraints";
 import type { User, AdminUserItem } from "@/types";
 
 export default function AdminUsersPage() {
@@ -76,7 +77,7 @@ export default function AdminUsersPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    setSearchQuery(searchInput);
+    setSearchQuery(searchInput.trim());
   };
 
   const handleRoleChange = (newRole: string) => {
@@ -173,8 +174,12 @@ export default function AdminUsersPage() {
             <input 
               type="text" 
               value={searchInput} 
-              onChange={(e) => setSearchInput(e.target.value)} 
-              placeholder="Cari nama atau email..."
+              onChange={(e) => setSearchInput(cleanPlainText(e.target.value, FORM_LIMITS.searchMax))}
+              placeholder="Cari nama/email (maks. 80 karakter)"
+              aria-label="Cari nama atau email pengguna"
+              autoComplete="off"
+              maxLength={FORM_LIMITS.searchMax}
+              spellCheck={false}
               style={{
                 width: "100%", padding: "14px 16px 14px 44px", borderRadius: 12,
                 border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
