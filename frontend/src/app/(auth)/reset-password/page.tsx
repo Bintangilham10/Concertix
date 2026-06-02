@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resetPassword } from "@/lib/api";
+import { FORM_LIMITS, cleanDigits, limitLength } from "@/lib/form-constraints";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -25,7 +26,9 @@ export default function ResetPasswordPage() {
     setError(null);
     setSuccess(false);
 
-    if (!email || !otp || !password || !confirmPassword) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail || !otp || !password || !confirmPassword) {
       setError("Email, OTP, dan kata sandi wajib diisi.");
       return;
     }
@@ -40,8 +43,13 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 8) {
-      setError("Kata sandi minimal berisi 8 karakter.");
+    if (password.length < FORM_LIMITS.passwordMin) {
+      setError(`Kata sandi minimal berisi ${FORM_LIMITS.passwordMin} karakter.`);
+      return;
+    }
+
+    if (password.length > FORM_LIMITS.passwordMax) {
+      setError(`Kata sandi maksimal ${FORM_LIMITS.passwordMax} karakter.`);
       return;
     }
 
@@ -50,10 +58,11 @@ export default function ResetPasswordPage() {
       return;
     }
 
+    setEmail(normalizedEmail);
     setLoading(true);
 
     try {
-      await resetPassword(email, otp, password);
+      await resetPassword(normalizedEmail, otp, password);
       setSuccess(true);
       
       // Setelah beberapa detik, arahkan otomatis ke halaman Login
@@ -110,11 +119,16 @@ export default function ResetPasswordPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nama@email.com"
+                onChange={(event) => setEmail(limitLength(event.target.value, FORM_LIMITS.emailMax))}
+                placeholder="nama@domain.com"
                 className="auth-input"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={FORM_LIMITS.emailMax}
+                required
                 disabled={loading || success}
               />
+              <p className="field-hint">Email yang menerima OTP, maksimal {FORM_LIMITS.emailMax} karakter.</p>
             </div>
 
             <div className="field-group">
@@ -123,13 +137,17 @@ export default function ResetPasswordPage() {
                 id="otp"
                 type="text"
                 inputMode="numeric"
-                maxLength={6}
+                autoComplete="one-time-code"
+                pattern="\d{6}"
+                maxLength={FORM_LIMITS.otpLength}
                 value={otp}
-                onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                onChange={(event) => setOtp(cleanDigits(event.target.value, FORM_LIMITS.otpLength))}
                 placeholder="123456"
                 className="auth-input"
+                required
                 disabled={loading || success}
               />
+              <p className="field-hint">Kode OTP harus tepat {FORM_LIMITS.otpLength} digit angka.</p>
             </div>
 
             <div className="field-group">
@@ -138,11 +156,16 @@ export default function ResetPasswordPage() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="Buat kata sandi yang kuat"
+                onChange={(event) => setPassword(limitLength(event.target.value, FORM_LIMITS.passwordMax))}
+                placeholder="Minimal 8 karakter"
                 className="auth-input"
+                autoComplete="new-password"
+                minLength={FORM_LIMITS.passwordMin}
+                maxLength={FORM_LIMITS.passwordMax}
+                required
                 disabled={loading || success}
               />
+              <p className="field-hint">{FORM_LIMITS.passwordMin}-{FORM_LIMITS.passwordMax} karakter, wajib ada huruf besar, huruf kecil, dan angka.</p>
             </div>
 
             <div className="field-group">
@@ -151,11 +174,16 @@ export default function ResetPasswordPage() {
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
+                onChange={(event) => setConfirmPassword(limitLength(event.target.value, FORM_LIMITS.passwordMax))}
                 placeholder="Ketik ulang kata sandi"
                 className="auth-input"
+                autoComplete="new-password"
+                minLength={FORM_LIMITS.passwordMin}
+                maxLength={FORM_LIMITS.passwordMax}
+                required
                 disabled={loading || success}
               />
+              <p className="field-hint">Harus sama dengan kata sandi baru.</p>
             </div>
 
             {error ? <p className="auth-error">{error}</p> : null}
