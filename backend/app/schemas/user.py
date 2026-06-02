@@ -1,9 +1,22 @@
+import re
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
+CONTROL_OR_TAG_CHARS = re.compile(r"[\x00-\x1f\x7f<>]")
+
+
 class UserBase(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=254)
     full_name: str = Field(..., min_length=2, max_length=120)
+
+    @field_validator("full_name")
+    @classmethod
+    def full_name_must_be_plain_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if CONTROL_OR_TAG_CHARS.search(normalized):
+            raise ValueError("Nama lengkap tidak boleh memuat karakter kontrol atau tag HTML")
+        return normalized
 
 
 class UserCreate(UserBase):
@@ -21,7 +34,7 @@ class UserCreate(UserBase):
 
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=254)
     password: str = Field(..., min_length=1, max_length=128)
 
 
@@ -45,7 +58,7 @@ class TokenRefreshRequest(BaseModel):
 
 
 class ForgotPasswordRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=254)
 
 
 class ForgotPasswordResponse(BaseModel):
@@ -53,7 +66,7 @@ class ForgotPasswordResponse(BaseModel):
 
 
 class ResetPasswordRequest(BaseModel):
-    email: EmailStr
+    email: EmailStr = Field(..., max_length=254)
     otp: str = Field(..., pattern=r"^\d{6}$")
     password: str = Field(..., min_length=8, max_length=128)
 
