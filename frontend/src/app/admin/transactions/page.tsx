@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useCallback } from "react";
 import { logoutJwt, getCurrentUser, clearCache } from "@/lib/auth";
 import { getAdminTransactions } from "@/lib/api";
+import { FORM_LIMITS, cleanPlainText } from "@/lib/form-constraints";
 import type { User, AdminTransactionItem } from "@/types";
 
 const STATUS_OPTIONS = [
@@ -98,7 +99,7 @@ export default function AdminTransactionsPage() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
-    setSearchQuery(searchInput);
+    setSearchQuery(searchInput.trim());
   };
 
   const handleStatusChange = (newStatus: string) => {
@@ -242,8 +243,12 @@ export default function AdminTransactionsPage() {
             <input 
               type="text" 
               value={searchInput} 
-              onChange={(e) => setSearchInput(e.target.value)} 
-              placeholder="Cari nama atau email pembeli..."
+              onChange={(e) => setSearchInput(cleanPlainText(e.target.value, FORM_LIMITS.searchMax))}
+              placeholder="Cari nama/email pembeli (maks. 80 karakter)"
+              aria-label="Cari nama atau email pembeli"
+              autoComplete="off"
+              maxLength={FORM_LIMITS.searchMax}
+              spellCheck={false}
               style={{
                 width: "100%", padding: "14px 16px 14px 44px", borderRadius: 12,
                 border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.03)",
