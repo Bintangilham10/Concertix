@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -11,6 +11,8 @@ from app.middleware.rbac import require_role  # T10: Use generic RBAC middleware
 from app.middleware.rate_limiter import limiter  # T4: Rate limiting
 
 router = APIRouter()
+
+UUID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 
 
 @router.get("/", response_model=ConcertListResponse)
@@ -43,7 +45,11 @@ async def list_concerts(
 
 @router.get("/{concert_id}", response_model=ConcertResponse)
 @limiter.limit("30/minute")
-async def get_concert(request: Request, concert_id: str, db: Session = Depends(get_db)):
+async def get_concert(
+    request: Request,
+    concert_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
+    db: Session = Depends(get_db),
+):
     """Get a single concert by ID (public)."""
     concert = db.query(Concert).filter(Concert.id == concert_id).first()
     if not concert:
@@ -77,8 +83,8 @@ async def create_concert(
 @limiter.limit("10/minute")
 async def update_concert(
     request: Request,
-    concert_id: str,
     concert_data: ConcertUpdate,
+    concert_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
 ):
@@ -112,7 +118,7 @@ async def update_concert(
 @limiter.limit("10/minute")
 async def delete_concert(
     request: Request,
-    concert_id: str,
+    concert_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     admin: User = Depends(require_role("admin")),  # T10: RBAC
     db: Session = Depends(get_db),
 ):
