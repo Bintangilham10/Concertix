@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginWithJwt } from "@/lib/auth";
+import { FORM_LIMITS, limitLength } from "@/lib/form-constraints";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,15 +18,22 @@ export default function LoginPage() {
     event.preventDefault();
     setError(null);
 
-    if (!email || !password) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail || !password) {
       setError("Email dan password wajib diisi.");
+      return;
+    }
+
+    if (password.length > FORM_LIMITS.passwordMax) {
+      setError(`Kata sandi maksimal ${FORM_LIMITS.passwordMax} karakter.`);
       return;
     }
 
     setLoading(true);
 
     try {
-      const user = await loginWithJwt(email, password);
+      const user = await loginWithJwt(normalizedEmail, password);
 
       if (user) {
         if (user.role === "admin") {
@@ -80,10 +88,15 @@ export default function LoginPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nama@email.com"
+                onChange={(event) => setEmail(limitLength(event.target.value, FORM_LIMITS.emailMax))}
+                placeholder="nama@domain.com"
                 className="auth-input"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={FORM_LIMITS.emailMax}
+                required
               />
+              <p className="field-hint">Format email aktif, maksimal {FORM_LIMITS.emailMax} karakter.</p>
             </div>
 
             <div className="field-group">
@@ -98,10 +111,13 @@ export default function LoginPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="••••••••"
+                  onChange={(event) => setPassword(limitLength(event.target.value, FORM_LIMITS.passwordMax))}
+                  placeholder="Kata sandi akun"
                   className="auth-input"
                   style={{ paddingRight: "40px" }}
+                  autoComplete="current-password"
+                  maxLength={FORM_LIMITS.passwordMax}
+                  required
                 />
                 <button
                   type="button"
@@ -129,6 +145,7 @@ export default function LoginPage() {
                   )}
                 </button>
               </div>
+              <p className="field-hint">Maksimal {FORM_LIMITS.passwordMax} karakter.</p>
             </div>
 
             {error ? <p className="auth-error">{error}</p> : null}
