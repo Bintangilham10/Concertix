@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from fastapi.responses import Response
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -11,6 +11,7 @@ from app.models.payment_attempt import PaymentAttempt
 from app.models.user import User
 from app.schemas.ticket import TicketOrderRequest, TicketResponse
 from app.middleware.auth_middleware import get_current_user
+from app.middleware.rate_limiter import limiter
 
 # Blockchain integration (Week 3)
 try:
@@ -21,9 +22,13 @@ except ImportError:
 
 router = APIRouter()
 
+UUID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+
 
 @router.post("/order", status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")
 async def order_ticket(
+    request: Request,
     order: TicketOrderRequest,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
@@ -113,8 +118,10 @@ async def order_ticket(
 
 
 @router.post("/{ticket_id}/cancel", response_model=TicketResponse)
+@limiter.limit("10/minute")
 async def cancel_pending_ticket(
-    ticket_id: str,
+    request: Request,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -167,7 +174,9 @@ async def cancel_pending_ticket(
 
 
 @router.get("/my-tickets", response_model=List[TicketResponse])
+@limiter.limit("30/minute")
 async def get_my_tickets(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -182,8 +191,10 @@ async def get_my_tickets(
 
 
 @router.get("/{ticket_id}/verify")
+@limiter.limit("30/minute")
 async def verify_ticket(
-    ticket_id: str,
+    request: Request,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -223,8 +234,10 @@ async def verify_ticket(
 
 
 @router.get("/{ticket_id}/pdf")
+@limiter.limit("10/minute")
 async def download_ticket_pdf(
-    ticket_id: str,
+    request: Request,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
