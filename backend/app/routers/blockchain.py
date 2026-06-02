@@ -3,7 +3,7 @@ Blockchain API Router — Endpoints for viewing and verifying the ticket blockch
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from datetime import datetime
@@ -25,6 +25,8 @@ from app.services.blockchain_service import (
 )
 
 router = APIRouter()
+
+UUID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 
 
 # ── Response Schemas ─────────────────────────────────────────────────────────
@@ -95,7 +97,9 @@ async def get_chain_info(request: Request, db: Session = Depends(get_db)):
 
 
 @router.get("/chain", response_model=List[BlockResponse])
+@limiter.limit("30/minute")
 async def get_full_chain(
+    request: Request,
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
     admin: User = Depends(require_role("admin")),
@@ -117,7 +121,9 @@ async def get_full_chain(
 
 
 @router.get("/verify", response_model=ChainVerificationResponse)
+@limiter.limit("30/minute")
 async def verify_blockchain(
+    request: Request,
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
@@ -131,8 +137,10 @@ async def verify_blockchain(
 
 
 @router.get("/ticket/{ticket_id}", response_model=TicketBlockchainStatus)
+@limiter.limit("30/minute")
 async def get_ticket_blockchain_status(
-    ticket_id: str,
+    request: Request,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -166,8 +174,10 @@ async def get_ticket_blockchain_status(
 
 
 @router.post("/ticket/{ticket_id}/validate", response_model=BlockResponse)
+@limiter.limit("10/minute")
 async def validate_ticket(
-    ticket_id: str,
+    request: Request,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
