@@ -3,7 +3,7 @@ Admin API Router — Dashboard statistics and management endpoints.
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 from pydantic import BaseModel
@@ -20,6 +20,23 @@ from app.services.blockchain_service import get_ticket_block, is_ticket_used
 
 
 router = APIRouter()
+
+UUID_PATTERN = r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+SAFE_SEARCH_PATTERN = r"^[^\x00-\x1f\x7f<>]{1,80}$"
+TRANSACTION_STATUS_PATTERN = r"^(pending|success|failed|expired|refunded)$"
+USER_ROLE_PATTERN = r"^(admin|customer)$"
+
+
+def build_safe_like_pattern(value: str) -> str:
+    """Escape SQL LIKE wildcards while keeping ORM parameter binding."""
+    normalized = value.strip()
+    escaped = (
+        normalized
+        .replace("\\", "\\\\")
+        .replace("%", "\\%")
+        .replace("_", "\\_")
+    )
+    return f"%{escaped}%"
 
 
 # ── Response Schemas ─────────────────────────────────────────────────────────
@@ -196,7 +213,7 @@ async def get_admin_stats(
 @limiter.limit("20/minute")
 async def scan_ticket_detail(
     request: Request,
-    ticket_id: str,
+    ticket_id: str = Path(..., min_length=36, max_length=36, pattern=UUID_PATTERN),
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
@@ -290,8 +307,13 @@ async def get_admin_transactions(
     request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    status_filter: Optional[str] = Query(None, alias="status"),
-    search: Optional[str] = Query(None),
+    status_filter: Optional[str] = Query(
+        None,
+        alias="status",
+        max_length=20,
+        pattern=TRANSACTION_STATUS_PATTERN,
+    ),
+    search: Optional[str] = Query(None, min_length=1, max_length=80, pattern=SAFE_SEARCH_PATTERN),
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
@@ -314,10 +336,10 @@ async def get_admin_transactions(
 
     # Apply search filter (buyer name or email)
     if search:
-        search_pattern = f"%{search}%"
+        search_pattern = build_safe_like_pattern(search)
         base_query = base_query.filter(
-            (User.full_name.ilike(search_pattern)) |
-            (User.email.ilike(search_pattern))
+            (User.full_name.ilike(search_pattern, escape="\\")) |
+            (User.email.ilike(search_pattern, escape="\\"))
         )
 
     # Count total before pagination
@@ -388,8 +410,8 @@ async def get_admin_users(
     request: Request,
     page: int = Query(1, ge=1),
     per_page: int = Query(20, ge=1, le=100),
-    role: Optional[str] = Query(None),
-    search: Optional[str] = Query(None),
+    role: Optional[str] = Query(None, max_length=20, pattern=USER_ROLE_PATTERN),
+    search: Optional[str] = Query(None, min_length=1, max_length=80, pattern=SAFE_SEARCH_PATTERN),
     admin: User = Depends(require_role("admin")),
     db: Session = Depends(get_db),
 ):
@@ -404,10 +426,10 @@ async def get_admin_users(
         base_query = base_query.filter(User.role == role)
 
     if search:
-        search_pattern = f"%{search}%"
+        search_pattern = build_safe_like_pattern(search)
         base_query = base_query.filter(
-            (User.full_name.ilike(search_pattern)) |
-            (User.email.ilike(search_pattern))
+            (User.full_name.ilike(search_pattern, escape="\\")) |
+            (User.email.ilike(search_pattern, escape="\\"))
         )
 
     total = base_query.count()
