@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerWithJwt } from "@/lib/auth";
+import { FORM_LIMITS, cleanPlainText, limitLength } from "@/lib/form-constraints";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -29,12 +30,22 @@ export default function RegisterPage() {
     }
 
     if (normalizedFullName.length < 2) {
-      setError("Nama lengkap minimal 2 karakter.");
+      setError(`Nama lengkap minimal ${FORM_LIMITS.fullNameMin} karakter.`);
       return;
     }
 
-    if (password.length < 8) {
-      setError("Password minimal 8 karakter.");
+    if (normalizedFullName.length > FORM_LIMITS.fullNameMax) {
+      setError(`Nama lengkap maksimal ${FORM_LIMITS.fullNameMax} karakter.`);
+      return;
+    }
+
+    if (password.length < FORM_LIMITS.passwordMin) {
+      setError(`Password minimal ${FORM_LIMITS.passwordMin} karakter.`);
+      return;
+    }
+
+    if (password.length > FORM_LIMITS.passwordMax) {
+      setError(`Password maksimal ${FORM_LIMITS.passwordMax} karakter.`);
       return;
     }
 
@@ -109,10 +120,15 @@ export default function RegisterPage() {
                 id="full_name"
                 type="text"
                 value={fullName}
-                onChange={(event) => setFullName(event.target.value)}
-                placeholder="Nama lengkap"
+                onChange={(event) => setFullName(cleanPlainText(event.target.value, FORM_LIMITS.fullNameMax))}
+                placeholder="Nama sesuai identitas"
                 className="auth-input"
+                autoComplete="name"
+                minLength={FORM_LIMITS.fullNameMin}
+                maxLength={FORM_LIMITS.fullNameMax}
+                required
               />
+              <p className="field-hint">{FORM_LIMITS.fullNameMin}-{FORM_LIMITS.fullNameMax} karakter. Hindari simbol atau tag HTML.</p>
             </div>
 
             <div className="field-group">
@@ -121,10 +137,15 @@ export default function RegisterPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nama@email.com"
+                onChange={(event) => setEmail(limitLength(event.target.value, FORM_LIMITS.emailMax))}
+                placeholder="nama@domain.com"
                 className="auth-input"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={FORM_LIMITS.emailMax}
+                required
               />
+              <p className="field-hint">Gunakan email aktif, maksimal {FORM_LIMITS.emailMax} karakter.</p>
             </div>
 
             <div className="field-group">
@@ -134,10 +155,14 @@ export default function RegisterPage() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="••••••••"
+                  onChange={(event) => setPassword(limitLength(event.target.value, FORM_LIMITS.passwordMax))}
+                  placeholder="Minimal 8 karakter"
                   className="auth-input"
                   style={{ paddingRight: "40px" }}
+                  autoComplete="new-password"
+                  minLength={FORM_LIMITS.passwordMin}
+                  maxLength={FORM_LIMITS.passwordMax}
+                  required
                 />
                 <button
                   type="button"
@@ -166,7 +191,7 @@ export default function RegisterPage() {
                 </button>
               </div>
               <p className="auth-note" style={{ marginTop: 8, marginBottom: 0 }}>
-                Minimal 8 karakter, wajib ada huruf besar, huruf kecil, dan angka.
+                {FORM_LIMITS.passwordMin}-{FORM_LIMITS.passwordMax} karakter, wajib ada huruf besar, huruf kecil, dan angka.
               </p>
             </div>
 
@@ -177,10 +202,14 @@ export default function RegisterPage() {
                   id="confirm_password"
                   type={showConfirmPassword ? "text" : "password"}
                   value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="••••••••"
+                  onChange={(event) => setConfirmPassword(limitLength(event.target.value, FORM_LIMITS.passwordMax))}
+                  placeholder="Ulangi kata sandi"
                   className="auth-input"
                   style={{ paddingRight: "40px" }}
+                  autoComplete="new-password"
+                  minLength={FORM_LIMITS.passwordMin}
+                  maxLength={FORM_LIMITS.passwordMax}
+                  required
                 />
                 <button
                   type="button"
@@ -208,6 +237,7 @@ export default function RegisterPage() {
                   )}
                 </button>
               </div>
+              <p className="field-hint">Harus sama dengan password di atas.</p>
             </div>
 
             {error ? <p className="auth-error">{error}</p> : null}
