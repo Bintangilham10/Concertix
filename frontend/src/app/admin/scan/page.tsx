@@ -6,6 +6,7 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import { clearCache, getCurrentUser, logoutJwt } from "@/lib/auth";
 import { getAdminTicketScan, validateTicket } from "@/lib/api";
+import { FORM_LIMITS, cleanPlainText, isValidUuid, parseTicketCode as parseTicketCodeValue } from "@/lib/form-constraints";
 import type { AdminTicketScanResult, User } from "@/types";
 
 const navItems = [
@@ -17,10 +18,7 @@ const navItems = [
 ];
 
 function parseTicketCode(value: string): string {
-  const trimmed = value.trim();
-  const match = trimmed.match(/CONCERTIX-VERIFY:([a-zA-Z0-9-]+)/i);
-  if (match?.[1]) return match[1];
-  return trimmed;
+  return parseTicketCodeValue(value);
 }
 
 function statusStyle(status: string) {
@@ -188,6 +186,10 @@ export default function AdminScanTicketPage() {
       setError("Masukkan Ticket ID atau isi QR e-ticket.");
       return;
     }
+    if (!isValidUuid(ticketId)) {
+      setError("Format Ticket ID tidak valid. Gunakan UUID atau CONCERTIX-VERIFY:UUID.");
+      return;
+    }
     await loadTicket(ticketId);
   };
 
@@ -336,11 +338,18 @@ export default function AdminScanTicketPage() {
                 Ticket ID / QR
                 <textarea
                   value={scanInput}
-                  onChange={(event) => setScanInput(event.target.value)}
-                  placeholder="CONCERTIX-VERIFY:ticket-id"
+                  onChange={(event) => setScanInput(cleanPlainText(event.target.value, FORM_LIMITS.ticketCodeMax))}
+                  placeholder="CONCERTIX-VERIFY:00000000-0000-0000-0000-000000000000"
+                  maxLength={FORM_LIMITS.ticketCodeMax}
                   rows={4}
+                  spellCheck={false}
+                  autoCapitalize="none"
+                  autoComplete="off"
                   style={{ width: "100%", marginTop: 8, padding: 14, borderRadius: 10, border: "1px solid rgba(255,255,255,0.1)", background: "rgba(255,255,255,0.04)", color: "#fff", outline: "none", resize: "vertical", fontFamily: "monospace", fontSize: 13 }}
                 />
+                <span style={{ color: "#9ca3af", display: "block", fontSize: 12, lineHeight: 1.5, marginTop: 6 }}>
+                  Tempel isi QR atau UUID tiket. Maksimal {FORM_LIMITS.ticketCodeMax} karakter.
+                </span>
               </label>
               <button type="submit" disabled={loading} style={{ padding: "12px 18px", borderRadius: 10, border: "none", background: "linear-gradient(135deg, #7c3aed, #ec4899)", color: "#fff", fontWeight: 800, cursor: loading ? "wait" : "pointer", opacity: loading ? 0.7 : 1 }}>
                 {loading ? "Mengecek..." : "Cek Tiket"}
