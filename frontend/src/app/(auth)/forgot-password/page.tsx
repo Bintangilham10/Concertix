@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { forgotPassword } from "@/lib/api";
+import { FORM_LIMITS, limitLength } from "@/lib/form-constraints";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -15,15 +16,18 @@ export default function ForgotPasswordPage() {
     setError(null);
     setSuccess(false);
 
-    if (!email) {
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
       setError("Email wajib diisi.");
       return;
     }
 
+    setEmail(normalizedEmail);
     setLoading(true);
 
     try {
-      await forgotPassword(email);
+      await forgotPassword(normalizedEmail);
       setSuccess(true);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Gagal mengirim kode OTP reset kata sandi.";
@@ -79,11 +83,16 @@ export default function ForgotPasswordPage() {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="nama@email.com"
+                onChange={(event) => setEmail(limitLength(event.target.value, FORM_LIMITS.emailMax))}
+                placeholder="nama@domain.com"
                 className="auth-input"
+                autoComplete="email"
+                inputMode="email"
+                maxLength={FORM_LIMITS.emailMax}
+                required
                 disabled={loading || success}
               />
+              <p className="field-hint">Masukkan email terdaftar, maksimal {FORM_LIMITS.emailMax} karakter.</p>
             </div>
 
             {error ? <p className="auth-error">{error}</p> : null}
