@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { orderTicket, createPayment, getMyTickets } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { startMidtransPayment } from "@/lib/midtrans";
-import { FORM_LIMITS, cleanDigits, cleanPlainText, limitLength } from "@/lib/form-constraints";
+import { FORM_LIMITS, cleanDigits, cleanPlainText, isValidEmail, limitLength } from "@/lib/form-constraints";
 
 const CONCERT_IDS: Record<string, string> = {
   VIP: "a5ec93d2-7c9d-4936-983e-5c6a6a9f3a5c",
@@ -155,7 +155,7 @@ export default function DashboardTickets() {
     const normalizedEmail = buyerEmail.trim();
     const normalizedPhone = buyerPhone.trim();
     const nOk = normalizedName.length >= FORM_LIMITS.fullNameMin && normalizedName.length <= FORM_LIMITS.fullNameMax;
-    const eOk = normalizedEmail.length <= FORM_LIMITS.emailMax && normalizedEmail.includes("@") && normalizedEmail.includes(".");
+    const eOk = isValidEmail(normalizedEmail);
     const pOk = normalizedPhone.length >= FORM_LIMITS.buyerPhoneMin && normalizedPhone.length <= FORM_LIMITS.buyerPhoneMax;
 
     setNameError(!nOk);
