@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { resetPassword } from "@/lib/api";
-import { FORM_LIMITS, cleanDigits, limitLength } from "@/lib/form-constraints";
+import { FORM_LIMITS, cleanDigits, isValidEmail, limitLength } from "@/lib/form-constraints";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -30,6 +30,11 @@ export default function ResetPasswordPage() {
 
     if (!normalizedEmail || !otp || !password || !confirmPassword) {
       setError("Email, OTP, dan kata sandi wajib diisi.");
+      return;
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Format email tidak valid.");
       return;
     }
 
