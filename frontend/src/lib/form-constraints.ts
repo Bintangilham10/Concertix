@@ -25,6 +25,7 @@ export const UUID_PATTERN =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
 
 const UUID_REGEX = new RegExp(UUID_PATTERN);
+const EMAIL_REGEX = /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/;
 const CONTROL_OR_TAG_CHARS = /[\u0000-\u001f\u007f<>]/g;
 
 export function limitLength(value: string, maxLength: number): string {
@@ -47,4 +48,8 @@ export function parseTicketCode(value: string): string {
 
 export function isValidUuid(value: string): boolean {
   return UUID_REGEX.test(value);
+}
+
+export function isValidEmail(value: string): boolean {
+  return value.length <= FORM_LIMITS.emailMax && EMAIL_REGEX.test(value);
 }
