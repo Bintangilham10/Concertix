@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { forgotPassword } from "@/lib/api";
-import { FORM_LIMITS, limitLength } from "@/lib/form-constraints";
+import { FORM_LIMITS, isValidEmail, limitLength } from "@/lib/form-constraints";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -20,6 +20,11 @@ export default function ForgotPasswordPage() {
 
     if (!normalizedEmail) {
       setError("Email wajib diisi.");
+      return;
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Format email tidak valid.");
       return;
     }
 
