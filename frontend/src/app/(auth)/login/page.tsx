@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginWithJwt } from "@/lib/auth";
-import { FORM_LIMITS, limitLength } from "@/lib/form-constraints";
+import { FORM_LIMITS, isValidEmail, limitLength } from "@/lib/form-constraints";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +22,11 @@ export default function LoginPage() {
 
     if (!normalizedEmail || !password) {
       setError("Email dan password wajib diisi.");
+      return;
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Format email tidak valid.");
       return;
     }
 
