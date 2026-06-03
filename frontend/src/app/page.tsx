@@ -2,15 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getCurrentUser, logoutJwt, clearCache } from "@/lib/auth";
-import { orderTicket, createPayment } from "@/lib/api";
-import { startMidtransPayment } from "@/lib/midtrans";
 import type { User } from "@/types";
-
-// ── Concert IDs (from database) ────────────────────────────────────
-const CONCERT_IDS: Record<string, string> = {
-  VIP: "a5ec93d2-7c9d-4936-983e-5c6a6a9f3a5c",
-  Regular: "e541329f-0d25-46d5-b1ea-b4ae8dd649e5",
-};
 
 // ── Types ──────────────────────────────────────────────────────────
 interface ToastData {
@@ -126,11 +118,6 @@ const faqs = [
   },
 ];
 
-// ── Utility ────────────────────────────────────────────────────────
-function formatRupiah(n: number): string {
-  return "Rp " + n.toLocaleString("id-ID");
-}
-
 // ── Component ──────────────────────────────────────────────────────
 export default function Home() {
   // Auth state
@@ -142,7 +129,7 @@ export default function Home() {
       try {
         const user = await getCurrentUser();
         setCurrentUser(user);
-      } catch (err) {
+      } catch {
         setCurrentUser(null);
       } finally {
         setAuthChecking(false);
@@ -159,27 +146,6 @@ export default function Home() {
   // Drawer state
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Modal state
-  const [modalOpen, setModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("VIP");
-  const [modalPriceStr, setModalPriceStr] = useState("Rp 1.250.000");
-  const [currentPrice, setCurrentPrice] = useState(1250000);
-  const qty = 1;
-
-  // Form state
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerEmail, setBuyerEmail] = useState("");
-  const [phoneCode, setPhoneCode] = useState("+62");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [nameError, setNameError] = useState(false);
-  const [emailError, setEmailError] = useState(false);
-  const [phoneError, setPhoneError] = useState(false);
-
-  // Checkout button state
-  const [checkoutText, setCheckoutText] = useState("Lanjut ke Pembayaran →");
-  const [checkoutDisabled, setCheckoutDisabled] = useState(false);
-  const [checkoutStyle, setCheckoutStyle] = useState<React.CSSProperties>({});
-
   // Toast state
   const [toastVisible, setToastVisible] = useState(false);
   const [toastData, setToastData] = useState<ToastData>({
@@ -191,9 +157,6 @@ export default function Home() {
 
   // FAQ state
   const [openFaqId, setOpenFaqId] = useState<string | null>(null);
-
-  // Name input ref for focus
-  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // ── Toast handler ──────────────────────────────────────────────
   const showToast = useCallback(
@@ -213,127 +176,16 @@ export default function Home() {
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
   const closeDrawer = () => setDrawerOpen(false);
 
-  // ── Modal ──────────────────────────────────────────────────────
-  const openModal = useCallback(
-    (type: string, priceStr: string, price: number) => {
-      setModalType(type);
-      setModalPriceStr(priceStr);
-      setCurrentPrice(price);
-      setBuyerName("");
-      setBuyerEmail("");
-      setBuyerPhone("");
-      setNameError(false);
-      setEmailError(false);
-      setPhoneError(false);
-      setCheckoutText("Lanjut ke Pembayaran →");
-      setCheckoutDisabled(false);
-      setCheckoutStyle({});
-      setModalOpen(true);
-      setTimeout(() => nameInputRef.current?.focus(), 100);
-    },
-    [],
-  );
-
-  const closeModal = useCallback(() => setModalOpen(false), []);
-
   // ── Escape key ─────────────────────────────────────────────────
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        closeDrawer();
-        closeModal();
+        setDrawerOpen(false);
       }
     };
     document.addEventListener("keydown", handleEsc);
     return () => document.removeEventListener("keydown", handleEsc);
-  }, [closeModal]);
-
-  // ── Quantity ───────────────────────────────────────────────────
-  // ── Checkout ───────────────────────────────────────────────────
-  const handleCheckout = async () => {
-    // Check if user is logged in
-    if (!currentUser) {
-      showToast("⚠️", "Login Diperlukan", "Silakan login terlebih dahulu untuk membeli tiket.", 3000);
-      setTimeout(() => { window.location.href = "/login"; }, 1500);
-      return;
-    }
-
-    const nOk = buyerName.trim().length > 1;
-    const eOk = buyerEmail.includes("@") && buyerEmail.includes(".");
-    const pOk = buyerPhone.trim().length >= 8;
-
-    setNameError(!nOk);
-    setEmailError(!eOk);
-    setPhoneError(!pOk);
-
-    if (!nOk || !eOk || !pOk) {
-      showToast("⚠️", "Periksa Form", "Ada data yang belum diisi dengan benar.", 3000);
-      return;
-    }
-
-    setCheckoutText("Memproses Pesanan...");
-    setCheckoutDisabled(true);
-
-    try {
-      // Step 1: Order ticket via API
-      const concertId = CONCERT_IDS[modalType];
-      if (!concertId) throw new Error("Tipe tiket tidak valid");
-
-      const ticketResult = await orderTicket(concertId, qty) as { id: string } | { id: string }[];
-      const ticketId = Array.isArray(ticketResult) ? ticketResult[0].id : ticketResult.id;
-
-      setCheckoutText("Membuat Pembayaran...");
-
-      // Step 2: Create payment via Midtrans
-      const paymentResult = await createPayment(ticketId) as { redirect_url: string; snap_token: string };
-
-      setCheckoutText("Membuka pembayaran...");
-      setCheckoutStyle({ background: "linear-gradient(135deg, #10B981, #059669)" });
-      showToast("🎉", "Pembayaran Dibuat!", "Popup Midtrans akan terbuka.", 4000);
-
-      // Step 3: Open Midtrans Snap popup without leaving this tab.
-      await startMidtransPayment({
-        snapToken: paymentResult.snap_token,
-        redirectUrl: paymentResult.redirect_url,
-        onSuccess: () => {
-          setModalOpen(false);
-          showToast("🎉", "Pembayaran Berhasil", "Mengarahkan ke Tiket Saya.", 4000);
-          window.location.href = "/dashboard/my-tickets";
-        },
-        onPending: () => {
-          setModalOpen(false);
-          showToast("⏳", "Pembayaran Diproses", "Cek status tiket di Tiket Saya.", 4000);
-          window.location.href = "/dashboard/my-tickets";
-        },
-        onError: () => {
-          showToast("❌", "Pembayaran Gagal", "Silakan coba lagi dari Tiket Saya.", 5000);
-          setCheckoutText("Lanjut ke Pembayaran →");
-          setCheckoutDisabled(false);
-          setCheckoutStyle({});
-        },
-        onClose: () => {
-          showToast("ℹ", "Pembayaran Ditutup", "Pesanan sudah dibuat. Lanjutkan pembayaran dari tab ini bila diperlukan.", 5000);
-          setCheckoutText("Lanjut ke Pembayaran →");
-          setCheckoutDisabled(false);
-          setCheckoutStyle({});
-        },
-        onFallback: () => {
-          setModalOpen(false);
-          showToast("ℹ", "Pembayaran Dibuka di Tab Baru", "Selesaikan pembayaran, lalu kembali ke tab Concertix ini.", 6000);
-          setCheckoutText("Lanjut ke Pembayaran →");
-          setCheckoutDisabled(false);
-          setCheckoutStyle({});
-        },
-      });
-
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Gagal memproses pesanan";
-      showToast("❌", "Gagal", message, 4000);
-      setCheckoutText("Lanjut ke Pembayaran →");
-      setCheckoutDisabled(false);
-      setCheckoutStyle({});
-    }
-  };
+  }, []);
 
   // ── FAQ toggle ─────────────────────────────────────────────────
   const toggleFaq = (id: string) => {
