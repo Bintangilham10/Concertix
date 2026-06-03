@@ -4,7 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerWithJwt } from "@/lib/auth";
-import { FORM_LIMITS, cleanPlainText, limitLength } from "@/lib/form-constraints";
+import { FORM_LIMITS, cleanPlainText, isValidEmail, limitLength } from "@/lib/form-constraints";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -36,6 +36,11 @@ export default function RegisterPage() {
 
     if (normalizedFullName.length > FORM_LIMITS.fullNameMax) {
       setError(`Nama lengkap maksimal ${FORM_LIMITS.fullNameMax} karakter.`);
+      return;
+    }
+
+    if (!isValidEmail(normalizedEmail)) {
+      setError("Format email tidak valid.");
       return;
     }
 
